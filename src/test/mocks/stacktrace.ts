@@ -1,5 +1,4 @@
-export default `
-Uncaught Error: Error!
+export default `Uncaught Error: Error!
     at u (index-d803759c.js:1:785)
     at i (index-d803759c.js:1:831)
     at Object.Dc (vendor-221d27ba.js:37:9852)

@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`transform > transforms 1`] = `
+"Uncaught Error: Error!
+  at <unknown> (../../src/utils.ts:2:8)
+  at throwError (../../src/App.tsx:5:15)
+  at <unknown> (../../node_modules/react-dom/cjs/react-dom.production.min.js:54:316)
+  at <unknown> (../../node_modules/react-dom/cjs/react-dom.production.min.js:54:470)
+  at <unknown> (../../node_modules/react-dom/cjs/react-dom.production.min.js:55:34)
+  at Ub (../../node_modules/react-dom/cjs/react-dom.production.min.js:105:67)
+  at nf (../../node_modules/react-dom/cjs/react-dom.production.min.js:106:379)
+  at se (../../node_modules/react-dom/cjs/react-dom.production.min.js:117:103)
+  at a (../../node_modules/react-dom/cjs/react-dom.production.min.js:274:41)
+  at Gb (../../node_modules/react-dom/cjs/react-dom.production.min.js:52:374)"
+`;

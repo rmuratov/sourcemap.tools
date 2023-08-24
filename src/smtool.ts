@@ -19,6 +19,7 @@ async function processStackFrame(
   maps: Record<string, RawIndexMap | RawSourceMap | string>,
 ) {
   let result = ''
+
   if (stackFrame.file && maps[stackFrame.file]) {
     await SourceMapConsumer.with(maps[stackFrame.file], null, consumer => {
       if (stackFrame.column && stackFrame.lineNumber) {
@@ -27,13 +28,13 @@ async function processStackFrame(
           line: stackFrame.lineNumber,
         })
 
-        result = `\tat ${originalPosition.name || '<unknown>'} (${originalPosition.source}:${
+        result = `  at ${originalPosition.name || '<unknown>'} (${originalPosition.source}:${
           originalPosition.line
         }:${originalPosition.column})`
       }
     })
   } else {
-    result = `\tat ${stackFrame.methodName || '<unknown>'} (${stackFrame.file}:${
+    result = `  at ${stackFrame.methodName || '<unknown>'} (${stackFrame.file}:${
       stackFrame.lineNumber
     }:${stackFrame.column})`
   }

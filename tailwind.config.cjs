@@ -1,4 +1,4 @@
 module.exports = {
   content: ['./src/**/*.{ts,tsx}', 'index.html'],
-  plugins: [require('daisyui')],
+  plugins: [require('@tailwindcss/typography'), require('daisyui')],
 }

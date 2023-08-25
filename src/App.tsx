@@ -1,19 +1,40 @@
-import React, { ChangeEvent, useEffect, useState } from 'react'
-import { BasicSourceMapConsumer, IndexedSourceMapConsumer } from 'source-map'
+import React, { ChangeEvent, useEffect, useMemo, useState } from 'react'
+import {
+  BasicSourceMapConsumer,
+  IndexedSourceMapConsumer,
+  RawIndexMap,
+  RawSourceMap,
+} from 'source-map'
 import { themeChange } from 'theme-change'
 
-import { createConsumer, parse } from './smtool.ts'
+import { createConsumer, parse, transform } from './smtool.ts'
 
 function App() {
   const [rawStackTrace, setRawStackTrace] = useState('')
+  const [transformedStackTrace, setTransformedStackTrace] = useState('')
   const [files, setFiles] = useState<string[]>([])
   const [maps, setMaps] = useState<
-    Record<string, BasicSourceMapConsumer | IndexedSourceMapConsumer>
+    Record<string, BasicSourceMapConsumer | IndexedSourceMapConsumer | string>
   >({})
   const handleChange: React.ChangeEventHandler<HTMLTextAreaElement> = event => {
     setRawStackTrace(event.target.value)
     console.log()
   }
+
+  const mappings = useMemo<Record<string, RawIndexMap | RawSourceMap | string>>(() => {
+    return files.reduce((p, c) => {
+      return {
+        ...p,
+        [c]: maps[c],
+      }
+    }, {})
+  }, [files, maps])
+
+  useEffect(() => {
+    if (rawStackTrace) {
+      transform(rawStackTrace, mappings).then(res => setTransformedStackTrace(res))
+    }
+  }, [rawStackTrace, mappings])
 
   const handleFileInputChange = async (event: ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) {
@@ -22,14 +43,18 @@ function App() {
 
     const files = event.target.files
 
-    const mps: Record<string, BasicSourceMapConsumer | IndexedSourceMapConsumer> = {}
+    const mps: Record<string, BasicSourceMapConsumer | IndexedSourceMapConsumer | string> = {}
 
     for (const file of files) {
       const text = await file.text()
 
-      const consumer = await createConsumer(text)
+      const json = JSON.parse(text)
 
-      mps[file.name] = consumer
+      console.log(text, json)
+
+      const consumer = await createConsumer(json)
+
+      mps[json.file || file.name] = text
     }
 
     setMaps({ ...maps, ...mps })
@@ -79,9 +104,9 @@ function App() {
 
         <div className="form-control">
           <textarea
-            className="textarea textarea-bordered  h-96 resize-none font-mono"
+            className="textarea textarea-bordered  h-96 resize-none font-mono overflow-x-scroll"
             disabled
-            value={rawStackTrace}
+            value={transformedStackTrace}
           ></textarea>
 
           <label className="label">

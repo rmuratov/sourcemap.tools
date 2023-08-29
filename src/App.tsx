@@ -1,32 +1,67 @@
-import React, { ChangeEvent, useEffect, useMemo, useState } from 'react'
+import cx from 'clsx'
+import {
+  type ChangeEvent,
+  type ChangeEventHandler,
+  type ClipboardEventHandler,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   BasicSourceMapConsumer,
   IndexedSourceMapConsumer,
-  RawIndexMap,
-  RawSourceMap,
+  type RawIndexMap,
+  type RawSourceMap,
 } from 'source-map'
-import { themeChange } from 'theme-change'
 
-import { createConsumer, parse, transform } from './smtool.ts'
+import { StackTrace } from './StackTrace.ts'
+import { transform } from './smtool.ts'
+
+const toggleTheme = false
+const isSourceMapTextAreaEnabled = false
 
 function App() {
   const [rawStackTrace, setRawStackTrace] = useState('')
-  const [transformedStackTrace, setTransformedStackTrace] = useState('')
   const [files, setFiles] = useState<string[]>([])
+  const [transformedStackTrace, setTransformedStackTrace] = useState('')
+  const [rawSourceMaps, setRawSourceMaps] = useState('')
   const [maps, setMaps] = useState<
     Record<string, BasicSourceMapConsumer | IndexedSourceMapConsumer | string>
   >({})
-  const handleChange: React.ChangeEventHandler<HTMLTextAreaElement> = event => {
+
+  const handleStackTraceChange: ChangeEventHandler<HTMLTextAreaElement> = event => {
+    const st = new StackTrace(event.target.value.trim())
+    setFiles(st.files)
     setRawStackTrace(event.target.value)
-    console.log()
+  }
+
+  const handleSourceMapTextAreaPaste: ClipboardEventHandler<HTMLTextAreaElement> = event => {
+    const sm = event.clipboardData.getData('text')
+
+    console.log(sm)
+
+    setRawSourceMaps(sm)
+
+    if (sm) {
+      try {
+        const json = JSON.parse(sm)
+
+        if (!maps[json.file]) {
+          setMaps({ ...maps, [json.file]: json })
+        }
+
+        setRawSourceMaps('')
+      } catch (e) {
+        console.log('Error parsing source map', e)
+      }
+    }
   }
 
   const mappings = useMemo<Record<string, RawIndexMap | RawSourceMap | string>>(() => {
-    return files.reduce((p, c) => {
-      return {
-        ...p,
-        [c]: maps[c],
-      }
+    return files.reduce((prev, curr) => {
+      if (!curr || !maps[curr]) return prev
+
+      return { ...prev, [curr]: maps[curr] }
     }, {})
   }, [files, maps])
 
@@ -50,10 +85,6 @@ function App() {
 
       const json = JSON.parse(text)
 
-      console.log(text, json)
-
-      const consumer = await createConsumer(json)
-
       mps[json.file || file.name] = text
     }
 
@@ -61,14 +92,7 @@ function App() {
     event.target.value = ''
   }
 
-  useEffect(() => {
-    const parsed = parse(rawStackTrace)
-    setFiles(parsed.files)
-  }, [rawStackTrace])
-
-  useEffect(() => {
-    themeChange(false)
-  }, [])
+  const isParseError = Boolean(rawStackTrace.trim()) && !files.length
 
   return (
     <div className="px-4">
@@ -79,32 +103,41 @@ function App() {
           </a>
         </div>
 
-        <div className="navbar-end">
-          <button className="btn btn-primary" data-act-class="ACTIVECLASS" data-set-theme="dark">
-            dark
-          </button>
-          <button className="btn btn-primary" data-act-class="ACTIVECLASS" data-set-theme="light">
-            light
-          </button>
-        </div>
+        {toggleTheme && (
+          <div className="navbar-end">
+            <button className="btn btn-primary" data-act-class="ACTIVECLASS" data-set-theme="dark">
+              dark
+            </button>
+            <button className="btn btn-primary" data-act-class="ACTIVECLASS" data-set-theme="light">
+              light
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="form-control">
           <textarea
-            className="textarea textarea-bordered h-96 resize-none font-mono"
-            onChange={handleChange}
+            className={cx(
+              'textarea textarea-bordered h-96 resize-none font-mono whitespace-pre leading-snug',
+              isParseError && 'textarea-warning',
+            )}
+            onChange={handleStackTraceChange}
             placeholder="Paste JavaScript error stack trace here"
           ></textarea>
 
           <label className="label">
-            <span className="label-text-alt">Put stack trace here</span>
+            <span className="label-text-alt">
+              {isParseError
+                ? 'Provided input appears not to be a stack trace'
+                : 'Put stack trace here'}
+            </span>
           </label>
         </div>
 
         <div className="form-control">
           <textarea
-            className="textarea textarea-bordered  h-96 resize-none font-mono overflow-x-scroll"
+            className="textarea textarea-bordered  h-96 resize-none font-mono whitespace-pre leading-snug"
             disabled
             value={transformedStackTrace}
           ></textarea>
@@ -118,13 +151,13 @@ function App() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-5">
         <div className="card card-bordered card-compact rounded-lg">
           <div className="card-body">
-            <h2 className="card-title">File names</h2>
+            <h2 className="card-title">Extracted file names</h2>
 
             {files.length ? (
               <ol>
-                {files.map(f => (
-                  <li className="font-mono" key={f}>
-                    {f}
+                {files.map(file => (
+                  <li className="font-mono" key={file}>
+                    {file}
                   </li>
                 ))}
               </ol>
@@ -147,13 +180,17 @@ function App() {
                 type="file"
               />
 
-              <div className="form-control">
-                <textarea
-                  className="textarea textarea-bordered resize-none font-mono h-0"
-                  onChange={handleChange}
-                  placeholder="Paste sourcemap content"
-                ></textarea>
-              </div>
+              {isSourceMapTextAreaEnabled && (
+                <div className="form-control">
+                  <textarea
+                    className="textarea textarea-bordered resize-none font-mono h-0"
+                    // onChange={handleSourceMapTextAreaChange}
+                    onPaste={handleSourceMapTextAreaPaste}
+                    placeholder="Or paste sourcemap content here"
+                    value={rawSourceMaps}
+                  ></textarea>
+                </div>
+              )}
             </div>
 
             {Object.keys(maps).length ? (

@@ -1,6 +1,12 @@
-import { NullableMappedPosition, RawIndexMap, RawSourceMap, SourceMapConsumer } from 'source-map'
+import type { StackFrame } from 'stacktrace-parser'
+
+import {
+  type NullableMappedPosition,
+  type RawIndexMap,
+  type RawSourceMap,
+  SourceMapConsumer,
+} from 'source-map'
 import * as stackTraceParser from 'stacktrace-parser'
-import { StackFrame } from 'stacktrace-parser'
 
 export async function transform(
   stackTrace: string,
@@ -14,19 +20,12 @@ export async function transform(
   return result
 }
 
-export function parse(stackTrace: string) {
-  const parsed = parseStackTrace(stackTrace)
-
-  const files: Set<string> = new Set()
-
-  parsed.frames.forEach(f => f.file && files.add(f.file))
-
-  return {
-    files: Array.from(files),
-  }
+export type ParsedStackTrace = {
+  frames: StackFrame[]
+  message: string
 }
 
-function parseStackTrace(stackTrace: string): { frames: StackFrame[]; message: string } {
+export function parseStackTrace(stackTrace: string): ParsedStackTrace {
   const frames = stackTraceParser.parse(stackTrace)
   const message = extractErrorMessage(stackTrace)
 
@@ -102,12 +101,14 @@ function getPosition(position: NullableMappedPosition | StackFrame): Position {
   return { column, file, line, method }
 }
 
-function isStackFrame(position: object): position is StackFrame {
-  return Boolean((position as StackFrame).lineNumber)
+function isStackFrame(position: NullableMappedPosition | StackFrame): position is StackFrame {
+  return 'lineNumber' in position
 }
 
-function isNullableMappedPosition(position: object): position is NullableMappedPosition {
-  return Boolean((position as NullableMappedPosition).source)
+function isNullableMappedPosition(
+  position: NullableMappedPosition | StackFrame,
+): position is NullableMappedPosition {
+  return 'source' in position
 }
 
 export function createConsumer(rawSourceMap: string) {

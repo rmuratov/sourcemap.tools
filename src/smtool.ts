@@ -1,67 +1,37 @@
 import type { StackFrame } from 'stacktrace-parser'
 
-import {
-  type NullableMappedPosition,
-  type RawIndexMap,
-  type RawSourceMap,
-  SourceMapConsumer,
-} from 'source-map'
-import * as stackTraceParser from 'stacktrace-parser'
+import { type NullableMappedPosition } from 'source-map'
 
-export async function transform(
-  stackTrace: string,
-  maps: Record<string, RawIndexMap | RawSourceMap | string>,
-) {
-  const { frames, message } = parseStackTrace(stackTrace)
+import type { SourceMap } from './SourceMap.ts'
+import type { StackTrace } from './StackTrace.ts'
 
-  const newStack = [message]
-  const transformed = await Promise.all(frames.map(sf => processStackFrame(sf, maps)))
-  const result = newStack.concat(transformed).join('\n')
-  return result
+export function transform(stackTrace: StackTrace, bindings: Record<string, SourceMap>) {
+  const newStack = [stackTrace.message || '']
+  const transformed = stackTrace.frames.map(sf => processStackFrame(sf, bindings))
+  return newStack.concat(transformed).join('\n')
 }
 
-export type ParsedStackTrace = {
-  frames: StackFrame[]
-  message: string
-}
-
-export function parseStackTrace(stackTrace: string): ParsedStackTrace {
-  const frames = stackTraceParser.parse(stackTrace)
-  const message = extractErrorMessage(stackTrace)
-
-  return { frames, message }
-}
-
-function extractErrorMessage(stackTrace: string) {
-  return stackTrace.split('\n')[0]
-}
-
-async function processStackFrame(
-  stackFrame: StackFrame,
-  maps: Record<string, RawIndexMap | RawSourceMap | string>,
-) {
-  const originalPosition = await tryGetOriginalPosition(stackFrame, maps)
+function processStackFrame(stackFrame: StackFrame, bindings: Record<string, SourceMap>) {
+  const originalPosition = tryGetOriginalPosition(stackFrame, bindings)
 
   return originalPosition
     ? generateStackTraceLine(getPosition(originalPosition))
     : generateStackTraceLine(getPosition(stackFrame))
 }
 
-async function tryGetOriginalPosition(
+function tryGetOriginalPosition(
   stackFrame: StackFrame,
-  maps: Record<string, RawIndexMap | RawSourceMap | string>,
-): Promise<NullableMappedPosition | null> {
+  bindings: Record<string, SourceMap>,
+): NullableMappedPosition | null {
   let result: NullableMappedPosition | null = null
 
   const { column, file, line } = getPosition(stackFrame)
 
-  if (!file || !maps[file] || !line || !column) {
+  if (!file || !bindings[file] || !line || !column) {
     return null
   }
 
-  await SourceMapConsumer.with(maps[file], null, consumer => {
-    result = consumer.originalPositionFor({ column, line })
-  })
+  result = bindings[file].consumer.originalPositionFor({ column, line })
 
   return result
 }
@@ -109,8 +79,4 @@ function isNullableMappedPosition(
   position: NullableMappedPosition | StackFrame,
 ): position is NullableMappedPosition {
   return 'source' in position
-}
-
-export function createConsumer(rawSourceMap: string) {
-  return new SourceMapConsumer(rawSourceMap)
 }

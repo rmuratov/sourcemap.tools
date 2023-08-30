@@ -3,19 +3,12 @@ import {
   type ChangeEvent,
   type ChangeEventHandler,
   type ClipboardEventHandler,
-  useEffect,
-  useMemo,
   useState,
 } from 'react'
-import {
-  BasicSourceMapConsumer,
-  IndexedSourceMapConsumer,
-  type RawIndexMap,
-  type RawSourceMap,
-} from 'source-map'
 
+import { Bindings } from './Bindings.ts'
+import { SourceMap } from './SourceMap.ts'
 import { StackTrace } from './StackTrace.ts'
-import { transform } from './smtool.ts'
 
 const toggleTheme = false
 const isSourceMapTextAreaEnabled = false
@@ -25,70 +18,62 @@ function App() {
   const [files, setFiles] = useState<string[]>([])
   const [transformedStackTrace, setTransformedStackTrace] = useState('')
   const [rawSourceMaps, setRawSourceMaps] = useState('')
-  const [maps, setMaps] = useState<
-    Record<string, BasicSourceMapConsumer | IndexedSourceMapConsumer | string>
-  >({})
+  const [sourceMaps, setSourceMaps] = useState<SourceMap[]>([])
+
+  const [bindings] = useState(() => new Bindings())
+
+  function addSourceMaps(value: Array<SourceMap | null> | SourceMap) {
+    const newSourceMaps: SourceMap[] = []
+
+    for (const sourceMap of Array.isArray(value) ? value : [value]) {
+      if (sourceMap && !sourceMaps.some(s => s.isEqual(sourceMap))) {
+        newSourceMaps.push(sourceMap)
+      }
+    }
+
+    setSourceMaps(sourceMaps => {
+      bindings.addSourceMaps([...sourceMaps, ...newSourceMaps])
+
+      console.log('BIN', bindings)
+      return [...sourceMaps, ...newSourceMaps]
+    })
+  }
 
   const handleStackTraceChange: ChangeEventHandler<HTMLTextAreaElement> = event => {
     const st = new StackTrace(event.target.value.trim())
     setFiles(st.files)
+
+    bindings.addFileNames(st.files)
+    console.log('BIN', bindings)
     setRawStackTrace(event.target.value)
   }
 
   const handleSourceMapTextAreaPaste: ClipboardEventHandler<HTMLTextAreaElement> = event => {
     const sm = event.clipboardData.getData('text')
-
     console.log(sm)
-
-    setRawSourceMaps(sm)
-
-    if (sm) {
-      try {
-        const json = JSON.parse(sm)
-
-        if (!maps[json.file]) {
-          setMaps({ ...maps, [json.file]: json })
-        }
-
-        setRawSourceMaps('')
-      } catch (e) {
-        console.log('Error parsing source map', e)
-      }
-    }
   }
 
-  const mappings = useMemo<Record<string, RawIndexMap | RawSourceMap | string>>(() => {
-    return files.reduce((prev, curr) => {
-      if (!curr || !maps[curr]) return prev
-
-      return { ...prev, [curr]: maps[curr] }
-    }, {})
-  }, [files, maps])
-
-  useEffect(() => {
-    if (rawStackTrace) {
-      transform(rawStackTrace, mappings).then(res => setTransformedStackTrace(res))
-    }
-  }, [rawStackTrace, mappings])
+  function notify(message: string) {
+    console.log(message)
+  }
 
   const handleFileInputChange = async (event: ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) {
       return undefined
     }
 
-    const files = event.target.files
+    const maybeSourceMaps = await Promise.all(
+      Array.from(event.target.files).map(file =>
+        file.text().then(text => SourceMap.create(text, file.name)),
+      ),
+    )
 
-    const mps: Record<string, BasicSourceMapConsumer | IndexedSourceMapConsumer | string> = {}
-
-    for (const file of files) {
-      const text = await file.text()
-
-      const json = JSON.parse(text)
-
-      mps[json.file || file.name] = text
+    if (maybeSourceMaps.some(sm => !sm)) {
+      notify('Some of the provided files were not sourcemaps')
     }
 
-    setMaps({ ...maps, ...mps })
+    addSourceMaps(maybeSourceMaps)
+
     event.target.value = ''
   }
 
@@ -99,7 +84,7 @@ function App() {
       <div className="navbar px-0">
         <div className="navbar-start">
           <a className="normal-case text-xl" href="/">
-            Sourcemap Tool
+            UnMiniTrace
           </a>
         </div>
 
@@ -127,7 +112,7 @@ function App() {
           ></textarea>
 
           <label className="label">
-            <span className="label-text-alt">
+            <span className={cx('label-text-alt', isParseError && 'text-warning')}>
               {isParseError
                 ? 'Provided input appears not to be a stack trace'
                 : 'Put stack trace here'}
@@ -173,7 +158,7 @@ function App() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
               <input
-                accept=".map,.js.map,.txt"
+                accept=".map,.txt"
                 className="file-input file-input-bordered"
                 multiple
                 onChange={handleFileInputChange}
@@ -193,11 +178,11 @@ function App() {
               )}
             </div>
 
-            {Object.keys(maps).length ? (
+            {sourceMaps.length ? (
               <ol>
-                {Object.keys(maps).map(m => (
-                  <li className="font-mono" key={m}>
-                    {m}
+                {sourceMaps.map(m => (
+                  <li className="font-mono" key={m.id}>
+                    {m.fileNameInline || m.fileName || 'NO NAME'}
                   </li>
                 ))}
               </ol>

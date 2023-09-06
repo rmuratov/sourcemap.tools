@@ -42,24 +42,6 @@ function App() {
   /**
    * Process sourcemaps
    */
-  function readFileContent(file: File): Promise<string> {
-    // It should be just `return file.text()` but for some reason it does not work with vitest + RTL
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsText(file, 'UTF-8')
-      reader.onload = function (evt) {
-        if (evt.target && typeof evt.target.result === 'string') {
-          resolve(evt.target?.result)
-        } else {
-          resolve('')
-        }
-      }
-      reader.onerror = function (evt) {
-        reject(evt)
-      }
-    })
-  }
-
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     if (!event.target.files) {
       return undefined
@@ -67,7 +49,7 @@ function App() {
 
     const maybeSourceMaps = await Promise.all(
       Array.from(event.target.files).map(file =>
-        readFileContent(file).then(text => SourceMap.create(text, file.name)),
+        file.text().then(text => SourceMap.create(text, file.name)),
       ),
     )
 

@@ -5,18 +5,23 @@ import { type NullableMappedPosition } from 'source-map'
 import type { SourceMap } from './SourceMap.ts'
 import type { StackTrace } from './StackTrace.ts'
 
-export function transform(stackTrace: StackTrace, bindings: Record<string, SourceMap>) {
-  const newStack = [stackTrace.message || '']
-  const transformed = stackTrace.frames.map(sf => processStackFrame(sf, bindings))
-  return newStack.concat(transformed).join('\n')
+type UnifiedPosition = {
+  column: null | number
+  file: null | string
+  line: null | number
+  method: null | string
 }
 
-function processStackFrame(stackFrame: StackFrame, bindings: Record<string, SourceMap>) {
-  const originalPosition = tryGetOriginalPosition(stackFrame, bindings)
+export function transform(stackTrace: StackTrace, bindings: Record<string, SourceMap>) {
+  const newStack = [stackTrace.message || '']
 
-  return originalPosition
-    ? generateStackTraceLine(getPosition(originalPosition))
-    : generateStackTraceLine(getPosition(stackFrame))
+  const transformed = stackTrace.frames.map(stackFrame =>
+    generateStackTraceLine(
+      toUnifiedPosition(tryGetOriginalPosition(stackFrame, bindings) || stackFrame),
+    ),
+  )
+
+  return newStack.concat(transformed).join('\n')
 }
 
 function tryGetOriginalPosition(
@@ -25,7 +30,7 @@ function tryGetOriginalPosition(
 ): NullableMappedPosition | null {
   let result: NullableMappedPosition | null = null
 
-  const { column, file, line } = getPosition(stackFrame)
+  const { column, file, line } = toUnifiedPosition(stackFrame)
 
   if (!file || !bindings[file] || !line || !column) {
     return null
@@ -36,39 +41,29 @@ function tryGetOriginalPosition(
   return result
 }
 
-type Position = {
-  column: number
-  file: string
-  line: number
-  method: string
-}
-
-function generateStackTraceLine(position: Position) {
+function generateStackTraceLine(position: UnifiedPosition) {
   const { column, file, line, method } = position
-  return `  at ${method || '<unknown>'} (${file}:${line}:${column})`
+  return `  at ${method} (${file}:${line}:${column})`
 }
 
-function getPosition(position: NullableMappedPosition | StackFrame): Position {
-  let method = ''
-  let file = ''
-  let line = -1
-  let column = -1
-
+function toUnifiedPosition(position: NullableMappedPosition | StackFrame): UnifiedPosition {
   if (isStackFrame(position)) {
-    method = position.methodName
-    file = position.file || ''
-    line = position.lineNumber || -1
-    column = position.column || -1
+    return {
+      column: position.column,
+      file: position.file,
+      line: position.lineNumber,
+      method: position.methodName,
+    }
+  } else if (isNullableMappedPosition(position)) {
+    return {
+      column: position.column,
+      file: position.source,
+      line: position.line,
+      method: position.name,
+    }
+  } else {
+    throw new Error('Unknown position type')
   }
-
-  if (isNullableMappedPosition(position)) {
-    method = position.name || ''
-    file = position.source || ''
-    line = position.line || -1
-    column = position.column || -1
-  }
-
-  return { column, file, line, method }
 }
 
 function isStackFrame(position: NullableMappedPosition | StackFrame): position is StackFrame {

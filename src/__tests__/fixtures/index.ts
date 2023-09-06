@@ -1,0 +1,1 @@
+export { regular } from './regular'

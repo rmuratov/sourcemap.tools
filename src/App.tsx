@@ -42,6 +42,24 @@ function App() {
   /**
    * Process sourcemaps
    */
+  function readFileContent(file: File): Promise<string> {
+    // It should be just `return file.text()` but for some reason it does not work with vitest + RTL
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsText(file, 'UTF-8')
+      reader.onload = function (evt) {
+        if (evt.target && typeof evt.target.result === 'string') {
+          resolve(evt.target?.result)
+        } else {
+          resolve('')
+        }
+      }
+      reader.onerror = function (evt) {
+        reject(evt)
+      }
+    })
+  }
+
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     if (!event.target.files) {
       return undefined
@@ -49,7 +67,7 @@ function App() {
 
     const maybeSourceMaps = await Promise.all(
       Array.from(event.target.files).map(file =>
-        file.text().then(text => SourceMap.create(text, file.name)),
+        readFileContent(file).then(text => SourceMap.create(text, file.name)),
       ),
     )
 
@@ -101,7 +119,7 @@ function App() {
    * Transform stacktrace
    */
   useEffect(() => {
-    if (parsedStackTrace) {
+    if (parsedStackTrace && Object.keys(bindings).length > 0) {
       const original = transform(parsedStackTrace, bindings)
       setTransformedStackTrace(original)
     }
@@ -133,6 +151,7 @@ function App() {
               'textarea textarea-bordered h-96 resize-none font-mono whitespace-pre leading-snug',
               isParseError && 'textarea-warning',
             )}
+            data-testid="stacktrace-textarea"
             onChange={handleStackTraceChange}
             placeholder="Paste JavaScript error stack trace here"
           ></textarea>
@@ -149,6 +168,7 @@ function App() {
         <div className="form-control">
           <textarea
             className="textarea textarea-bordered  h-96 resize-none font-mono whitespace-pre leading-snug"
+            data-testid="result-textarea"
             readOnly
             value={transformedStackTrace}
           ></textarea>
@@ -165,7 +185,7 @@ function App() {
             <h2 className="card-title">Extracted file names</h2>
 
             {parsedStackTrace?.files.length ? (
-              <ol>
+              <ol data-testid="filenames-list">
                 {parsedStackTrace.files.map(file => (
                   <li className="font-mono" key={file}>
                     {file}
@@ -186,6 +206,7 @@ function App() {
               <input
                 accept=".map,.txt"
                 className="file-input file-input-bordered"
+                data-testid="sourcemap-file-input"
                 multiple
                 onChange={handleSourceMapFileInputChange}
                 type="file"

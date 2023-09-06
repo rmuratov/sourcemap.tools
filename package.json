@@ -37,6 +37,7 @@
     "eslint-plugin-perfectionist": "^1.5.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
+    "eslint-plugin-testing-library": "^6.0.1",
     "jsdom": "^22.1.0",
     "postcss": "^8.4.27",
     "prettier": "^3.0.1",

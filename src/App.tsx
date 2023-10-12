@@ -57,11 +57,11 @@ function App() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="form-control">
           <textarea
+            autoFocus
             className={cx(
               'textarea textarea-bordered h-96 resize-none font-mono whitespace-pre leading-snug',
               isParseError && 'textarea-warning',
             )}
-            autoFocus
             data-testid="stacktrace-textarea"
             onChange={event => setStackTrace(event.target.value)}
             placeholder="Paste JavaScript error stack trace here"

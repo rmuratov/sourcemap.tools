@@ -15,6 +15,22 @@ export class StackTrace {
     this.files = this.#extractFileNames(frames)
   }
 
+  static create(rawStackTrace: string) {
+    const trimmed = rawStackTrace.trim()
+
+    if (!trimmed) {
+      return null
+    }
+
+    const stackTrace = new StackTrace(rawStackTrace)
+
+    if (stackTrace.frames.length === 0) {
+      return null
+    }
+
+    return stackTrace
+  }
+
   #extractErrorMessage(stackTrace: string) {
     return stackTrace.split('\n')[0]
   }

@@ -2,8 +2,8 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect } from 'vitest'
 
-import { regular } from './__tests__/fixtures'
-import App from './App.tsx'
+import App from '../App.tsx'
+import { regular } from './fixtures'
 
 describe('general', () => {
   test('renders', () => {

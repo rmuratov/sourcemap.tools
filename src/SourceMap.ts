@@ -39,13 +39,8 @@ export class SourceMap {
 
     const consumer = await new SourceMapConsumer(rawSourceMap)
     const fileNameInline = parsed.file
-    const fileName = SourceMap.getFileNameFromSourceMapFileName(sourceMapFileName)
 
-    return new SourceMap(consumer, fileNameInline, fileName)
-  }
-
-  static getFileNameFromSourceMapFileName(sourceMapFileName?: string) {
-    return sourceMapFileName?.split('.map')?.[0]
+    return new SourceMap(consumer, fileNameInline, sourceMapFileName)
   }
 
   static isRawIndexMap(sourceMap: RawIndexMap | RawSourceMap): sourceMap is RawIndexMap {

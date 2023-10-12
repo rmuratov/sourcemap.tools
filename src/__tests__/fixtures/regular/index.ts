@@ -3,11 +3,11 @@ import path from 'node:path'
 
 export const regular = {
   result: `Uncaught Error: Error!
-  at null (../../src/utils.ts:2:8)
+  at (../../src/utils.ts:2:8)
   at throwError (../../src/App.tsx:5:15)
-  at null (../../node_modules/react-dom/cjs/react-dom.production.min.js:54:316)
-  at null (../../node_modules/react-dom/cjs/react-dom.production.min.js:54:470)
-  at null (../../node_modules/react-dom/cjs/react-dom.production.min.js:55:34)
+  at (../../node_modules/react-dom/cjs/react-dom.production.min.js:54:316)
+  at (../../node_modules/react-dom/cjs/react-dom.production.min.js:54:470)
+  at (../../node_modules/react-dom/cjs/react-dom.production.min.js:55:34)
   at Ub (../../node_modules/react-dom/cjs/react-dom.production.min.js:105:67)
   at nf (../../node_modules/react-dom/cjs/react-dom.production.min.js:106:379)
   at se (../../node_modules/react-dom/cjs/react-dom.production.min.js:117:103)

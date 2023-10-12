@@ -43,7 +43,7 @@ function tryGetOriginalPosition(
 
 function generateStackTraceLine(position: UnifiedPosition) {
   const { column, file, line, method } = position
-  return `  at ${method} (${file}:${line}:${column})`
+  return `  at${method ? ` ${method}` : ''} (${file}:${line}:${column})`
 }
 
 function toUnifiedPosition(position: NullableMappedPosition | StackFrame): UnifiedPosition {

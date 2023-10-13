@@ -15,6 +15,8 @@ export function useTransformedStacktraceStore(
     if (stackTrace && Object.keys(bindings).length > 0) {
       const original = transform(stackTrace, bindings)
       setTransformedStackTrace(original)
+    } else if (Object.keys(bindings).length === 0) {
+      setTransformedStackTrace('')
     }
   }, [stackTrace, bindings])
 

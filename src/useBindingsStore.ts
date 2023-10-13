@@ -8,6 +8,14 @@ export function useBindingsStore(sourceMaps: SourceMap[], stackTrace?: StackTrac
   const [bindings, setBindings] = useState<Record<string, SourceMap>>({})
 
   useEffect(() => {
+    if (
+      Object.keys(bindings).length !== 0 &&
+      (!stackTrace || stackTrace.files.length === 0 || sourceMaps.length === 0)
+    ) {
+      setBindings({})
+      return
+    }
+
     if (stackTrace) {
       for (const fileName of stackTrace.files) {
         for (const sourceMap of sourceMaps) {
@@ -16,6 +24,14 @@ export function useBindingsStore(sourceMaps: SourceMap[], stackTrace?: StackTrac
             (fileName === sourceMap.fileNameInline || fileName === sourceMap.fileName)
           ) {
             setBindings(state => ({ ...state, [fileName]: sourceMap }))
+          } else if (
+            bindings[fileName] &&
+            !sourceMaps.find(sm => fileName === sm.fileNameInline || fileName === sm.fileName)
+          ) {
+            const clone = { ...bindings }
+            delete clone[fileName]
+            console.log(clone)
+            setBindings(clone)
           }
         }
       }

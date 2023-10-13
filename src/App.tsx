@@ -140,7 +140,10 @@ function App() {
                 {sourceMaps.map(m => (
                   <li className="font-mono list-disc list-inside" key={m.id}>
                     {m.fileName || m.fileNameInline || `NO NAME (Generated id: ${m.id})`}{' '}
-                    <button className="btn btn-xs inline" onClick={() => deleteSourceMap(m.id)}>
+                    <button
+                      className="btn btn-error btn-outline btn-xs inline"
+                      onClick={() => deleteSourceMap(m.id)}
+                    >
                       delete
                     </button>
                   </li>

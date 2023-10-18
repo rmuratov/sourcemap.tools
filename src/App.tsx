@@ -1,5 +1,5 @@
 import cx from 'clsx'
-import { type ChangeEvent, type ClipboardEvent, useState } from 'react'
+import { type ChangeEvent, useState } from 'react'
 
 import { SourceMap } from './SourceMap.ts'
 import { useBindingsStore } from './useBindingsStore.ts'
@@ -9,7 +9,7 @@ import { useTransformedStacktraceStore } from './useTransformedStacktraceStore.t
 
 function App() {
   const { isParseError, setStackTrace, stackTrace } = useStackTraceStore()
-  const [rawSourceMaps, setRawSourceMaps] = useState('')
+  const [rawSourceMap, setRawSourceMap] = useState('')
   const { addSourceMaps, deleteSourceMap, sourceMaps } = useSourcemapsStore()
   const bindings = useBindingsStore(sourceMaps, stackTrace)
   const transformedStackTrace = useTransformedStacktraceStore(bindings, stackTrace)
@@ -34,9 +34,20 @@ function App() {
     event.target.value = ''
   }
 
-  function handleSourceMapTextAreaPaste(event: ClipboardEvent<HTMLTextAreaElement>) {
-    const sm = event.clipboardData.getData('text')
-    console.log(sm)
+  async function handleSourceMapTextAreaChange(event: ChangeEvent<HTMLTextAreaElement>) {
+    const text = event.target.value
+
+    setRawSourceMap(text)
+
+    const sm = await SourceMap.create(text)
+
+    if (!sm) {
+      notify('This is not sourcemaps')
+      return
+    }
+
+    addSourceMaps(sm)
+    setRawSourceMap('')
   }
 
   function notify(message: string) {
@@ -126,17 +137,16 @@ function App() {
               <div className="form-control">
                 <textarea
                   className="textarea textarea-bordered resize-none font-mono h-0"
-                  disabled
-                  onChange={event => setRawSourceMaps(event.target.value)}
-                  onPaste={handleSourceMapTextAreaPaste}
+                  data-testid="sourcemap-textarea"
+                  onChange={handleSourceMapTextAreaChange}
                   placeholder="Or paste sourcemap content here"
-                  value={rawSourceMaps}
+                  value={rawSourceMap}
                 ></textarea>
               </div>
             </div>
 
             {sourceMaps.length ? (
-              <ul className="space-y-2">
+              <ul className="space-y-2" data-testid="sourcemaps-list">
                 {sourceMaps.map(m => (
                   <li className="font-mono list-disc list-inside" key={m.id}>
                     {m.fileName || m.fileNameInline || `NO NAME (Generated id: ${m.id})`}{' '}

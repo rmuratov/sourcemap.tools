@@ -5,15 +5,8 @@ import { type NullableMappedPosition } from 'source-map'
 import type { SourceMap } from './SourceMap.ts'
 import type { StackTrace } from './StackTrace.ts'
 
-type UnifiedPosition = {
-  column: null | number
-  file: null | string
-  line: null | number
-  method: null | string
-}
-
 export function transform(stackTrace: StackTrace, bindings: Record<string, SourceMap>) {
-  const newStack = [stackTrace.message || '']
+  const result = [stackTrace.message || '']
 
   const transformed = stackTrace.frames.map(stackFrame =>
     generateStackTraceLine(
@@ -21,7 +14,7 @@ export function transform(stackTrace: StackTrace, bindings: Record<string, Sourc
     ),
   )
 
-  return newStack.concat(transformed).join('\n')
+  return result.concat(transformed).join('\n')
 }
 
 function tryGetOriginalPosition(
@@ -74,4 +67,11 @@ function isNullableMappedPosition(
   position: NullableMappedPosition | StackFrame,
 ): position is NullableMappedPosition {
   return 'source' in position
+}
+
+type UnifiedPosition = {
+  column: null | number
+  file: null | string
+  line: null | number
+  method: null | string
 }

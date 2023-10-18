@@ -1,13 +1,13 @@
 /// <reference types="vitest" />
 import react from '@vitejs/plugin-react'
-import { defineConfig, splitVendorChunkPlugin } from 'vite'
+import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
     sourcemap: true,
   },
-  plugins: [react(), splitVendorChunkPlugin()],
+  plugins: [react()],
 
   test: {
     // you might want to disable it, if you don't have tests that rely on CSS
@@ -15,6 +15,6 @@ export default defineConfig({
     css: true,
     environment: 'jsdom',
     globals: true,
-    setupFiles: './__tests__/setup.ts',
+    setupFiles: './src/__tests__/setup.ts',
   },
 })

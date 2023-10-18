@@ -30,7 +30,6 @@ export function useBindingsStore(sourceMaps: SourceMap[], stackTrace?: StackTrac
           ) {
             const clone = { ...bindings }
             delete clone[fileName]
-            console.log(clone)
             setBindings(clone)
           }
         }

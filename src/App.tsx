@@ -26,7 +26,7 @@ function App() {
     )
 
     if (maybeSourceMaps.some(sm => !sm)) {
-      notify('Some of the provided files were not sourcemaps')
+      notify('It seems that some files are not source maps')
     }
 
     addSourceMaps(maybeSourceMaps)
@@ -42,7 +42,7 @@ function App() {
     const sm = await SourceMap.create(text)
 
     if (!sm) {
-      notify('This is not sourcemaps')
+      notify('It seems that the text you pasted is not a source map')
       return
     }
 
@@ -75,14 +75,14 @@ function App() {
             )}
             data-testid="stacktrace-textarea"
             onChange={event => setStackTrace(event.target.value)}
-            placeholder="Paste JavaScript error stack trace here"
+            placeholder="Paste the stack trace of the JavaScript error here"
           ></textarea>
 
           <label className="label">
             <span className={cx('label-text-alt', isParseError && 'text-warning')}>
               {isParseError
-                ? 'Provided input appears not to be a stack trace'
-                : 'Put stack trace here'}
+                ? 'It seems that the text you pasted is not a stack trace'
+                : 'Paste the stack trace here'}
             </span>
           </label>
         </div>
@@ -96,7 +96,7 @@ function App() {
           ></textarea>
 
           <label className="label">
-            <span className="label-text-alt">See result here</span>
+            <span className="label-text-alt">See the results here</span>
           </label>
         </div>
       </div>
@@ -104,7 +104,7 @@ function App() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-5">
         <div className="card card-bordered card-compact rounded-lg">
           <div className="card-body">
-            <h2 className="card-title">Extracted file names</h2>
+            <h2 className="card-title">Extracted filenames</h2>
 
             {stackTrace?.files.length ? (
               <ul className="space-y-2" data-testid="filenames-list">
@@ -115,7 +115,7 @@ function App() {
                 ))}
               </ul>
             ) : (
-              'No file names. Provide your stack trace to see file names.'
+              'No file names. Please provide the stack trace.'
             )}
           </div>
         </div>
@@ -139,7 +139,7 @@ function App() {
                   className="textarea textarea-bordered resize-none font-mono h-0"
                   data-testid="sourcemap-textarea"
                   onChange={handleSourceMapTextAreaChange}
-                  placeholder="Or paste sourcemap content here"
+                  placeholder="Or paste the contents of the source map here"
                   value={rawSourceMap}
                 ></textarea>
               </div>

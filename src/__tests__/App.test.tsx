@@ -30,7 +30,7 @@ describe('stack trace', () => {
 })
 
 describe('sourcemaps', () => {
-  describe('supports sourcemaps from file input', () => {
+  describe('file input', () => {
     test('multiple sourcemaps at once', async () => {
       render(<App />)
       const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
@@ -47,7 +47,7 @@ describe('sourcemaps', () => {
     })
   })
 
-  describe('supports sourcemaps from textarea', () => {
+  describe('textarea', () => {
     test('pasting whole sourcemap', async () => {
       render(<App />)
 
@@ -61,7 +61,7 @@ describe('sourcemaps', () => {
     })
   })
 
-  describe('supports deleting sourcemaps', () => {
+  describe('deleting', () => {
     test('updates related lines after deleting sourcemap', async () => {
       render(<App />)
 

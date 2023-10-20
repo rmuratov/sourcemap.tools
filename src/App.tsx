@@ -104,7 +104,7 @@ function App() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-5">
         <div className="card card-bordered card-compact rounded-lg">
           <div className="card-body">
-            <h2 className="card-title">Extracted filenames</h2>
+            <h2 className="card-title">Extracted file names</h2>
 
             {stackTrace?.files.length ? (
               <ul className="space-y-2" data-testid="filenames-list">

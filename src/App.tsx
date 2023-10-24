@@ -68,6 +68,7 @@ function App() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="form-control">
           <textarea
+            aria-label="Minified stack trace"
             autoFocus
             className={cx(
               'textarea textarea-bordered h-96 resize-none font-mono whitespace-pre leading-snug',
@@ -89,6 +90,7 @@ function App() {
 
         <div className="form-control">
           <textarea
+            aria-label="Original stack trace"
             className="textarea textarea-bordered  h-96 resize-none font-mono whitespace-pre leading-snug"
             data-testid="result-textarea"
             readOnly
@@ -127,8 +129,10 @@ function App() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
               <input
                 accept=".map,.txt"
+                aria-label="Source map file input"
                 className="file-input file-input-bordered"
                 data-testid="sourcemap-file-input"
+                id="sourcemap-file-input"
                 multiple
                 onChange={handleSourceMapFileInputChange}
                 type="file"
@@ -136,8 +140,10 @@ function App() {
 
               <div className="form-control">
                 <textarea
+                  aria-label="Source map content textarea"
                   className="textarea textarea-bordered resize-none font-mono h-0"
                   data-testid="sourcemap-textarea"
+                  id="sourcemap-textarea"
                   onChange={handleSourceMapTextAreaChange}
                   placeholder="Or paste the contents of the source map here"
                   value={rawSourceMap}

@@ -10,14 +10,14 @@ export function useBindingsStore(sourceMaps: SourceMap[], stackTrace?: StackTrac
   useEffect(() => {
     if (
       Object.keys(bindings).length !== 0 &&
-      (!stackTrace || stackTrace.files.length === 0 || sourceMaps.length === 0)
+      (!stackTrace || stackTrace.fileNames.length === 0 || sourceMaps.length === 0)
     ) {
       setBindings({})
       return
     }
 
     if (stackTrace) {
-      for (const fileName of stackTrace.files) {
+      for (const fileName of stackTrace.fileNames) {
         for (const sourceMap of sourceMaps) {
           if (
             !bindings[fileName] &&

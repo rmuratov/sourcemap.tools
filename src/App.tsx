@@ -108,11 +108,11 @@ function App() {
           <div className="card-body">
             <h2 className="card-title">Extracted file names</h2>
 
-            {stackTrace?.files.length ? (
+            {stackTrace?.fileNames.length ? (
               <ul className="space-y-2" data-testid="filenames-list">
-                {stackTrace.files.map(file => (
-                  <li className="font-mono list-disc list-inside" key={file}>
-                    {file}
+                {stackTrace.fileNames.map(fileName => (
+                  <li className="font-mono list-disc list-inside" key={fileName}>
+                    {fileName}
                   </li>
                 ))}
               </ul>

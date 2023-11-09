@@ -16,7 +16,7 @@ export function useStackTraceStore() {
     }
   }
 
-  const isParseError = Boolean(rawStackTrace.trim()) && !stackTrace?.files.length
+  const isParseError = Boolean(rawStackTrace.trim()) && !stackTrace?.fileNames.length
 
   return { isParseError, rawStackTrace, setStackTrace: handleStackTraceChange, stackTrace }
 }

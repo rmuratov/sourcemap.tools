@@ -3,7 +3,7 @@ import type { StackFrame } from 'stacktrace-parser'
 import { parse } from 'stacktrace-parser'
 
 export class StackTrace {
-  files: string[]
+  fileNames: string[]
   frames: StackFrame[]
   message: string
 
@@ -12,7 +12,7 @@ export class StackTrace {
 
     this.frames = frames
     this.message = this.#extractErrorMessage(rawStackTrace)
-    this.files = this.#extractFileNames(frames)
+    this.fileNames = this.#extractFileNames(frames)
   }
 
   static create(rawStackTrace: string) {

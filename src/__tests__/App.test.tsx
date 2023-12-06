@@ -99,3 +99,23 @@ describe('sourcemaps', () => {
     })
   })
 })
+
+test('the resulting textarea is cleared if the stack trace is deleted', async () => {
+  render(<App />)
+
+  const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
+  const resultTextArea = screen.getByTestId('result-textarea')
+
+  stacktraceTextarea.focus()
+  await userEvent.paste(regular.stacktrace)
+
+  const sourcemapFileInput = screen.getByTestId('sourcemap-file-input')
+  const file = new File([regular.sourcemaps[0].content], regular.sourcemaps[0].fileName)
+  await userEvent.upload(sourcemapFileInput, file)
+
+  expect(resultTextArea).toHaveValue()
+
+  await userEvent.clear(stacktraceTextarea)
+
+  await waitFor(() => expect(resultTextArea).toHaveValue(''))
+})

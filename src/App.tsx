@@ -2,17 +2,22 @@ import cx from 'clsx'
 import { type ChangeEvent, useState } from 'react'
 
 import { SourceMap } from './SourceMap.ts'
+import { StackTrace } from './StackTrace.ts'
 import { calcBindings } from './calcBindings.ts'
+import { transform } from './transform.ts'
 import { useSourcemapsStore } from './useSourcemapsStore.ts'
-import { useStackTraceStore } from './useStackTraceStore.ts'
-import { useTransformedStacktraceStore } from './useTransformedStacktraceStore.ts'
 
 function App() {
-  const { isParseError, setStackTrace, stackTrace } = useStackTraceStore()
   const [rawSourceMap, setRawSourceMap] = useState('')
   const { addSourceMaps, deleteSourceMap, sourceMaps } = useSourcemapsStore()
+
+  const [rawStackTrace, setRawStackTrace] = useState<string>('')
+
+  const stackTrace = StackTrace.create(rawStackTrace) || undefined
+  const isParseError = Boolean(rawStackTrace.trim()) && !stackTrace
+
   const bindings = calcBindings(sourceMaps, stackTrace)
-  const transformedStackTrace = useTransformedStacktraceStore(bindings, stackTrace)
+  const transformedStackTrace = transform(bindings, stackTrace)
 
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     if (!event.target.files) {
@@ -75,7 +80,7 @@ function App() {
               isParseError && 'textarea-warning',
             )}
             data-testid="stacktrace-textarea"
-            onChange={event => setStackTrace(event.target.value)}
+            onChange={event => setRawStackTrace(event.target.value)}
             placeholder="Paste the stack trace of the JavaScript error here"
           ></textarea>
 

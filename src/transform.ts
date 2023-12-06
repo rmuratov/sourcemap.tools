@@ -5,7 +5,11 @@ import { type NullableMappedPosition } from 'source-map'
 import type { SourceMap } from './SourceMap.ts'
 import type { StackTrace } from './StackTrace.ts'
 
-export function transform(stackTrace: StackTrace, bindings: Record<string, SourceMap>) {
+export function transform(bindings: Record<string, SourceMap>, stackTrace?: StackTrace) {
+  if (!stackTrace || Object.keys(bindings).length === 0) {
+    return ''
+  }
+
   const result = [stackTrace.message || '']
 
   const transformed = stackTrace.frames.map(stackFrame =>

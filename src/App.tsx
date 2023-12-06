@@ -2,7 +2,7 @@ import cx from 'clsx'
 import { type ChangeEvent, useState } from 'react'
 
 import { SourceMap } from './SourceMap.ts'
-import { useBindingsStore } from './useBindingsStore.ts'
+import { calcBindings } from './calcBindings.ts'
 import { useSourcemapsStore } from './useSourcemapsStore.ts'
 import { useStackTraceStore } from './useStackTraceStore.ts'
 import { useTransformedStacktraceStore } from './useTransformedStacktraceStore.ts'
@@ -11,7 +11,7 @@ function App() {
   const { isParseError, setStackTrace, stackTrace } = useStackTraceStore()
   const [rawSourceMap, setRawSourceMap] = useState('')
   const { addSourceMaps, deleteSourceMap, sourceMaps } = useSourcemapsStore()
-  const bindings = useBindingsStore(sourceMaps, stackTrace)
+  const bindings = calcBindings(sourceMaps, stackTrace)
   const transformedStackTrace = useTransformedStacktraceStore(bindings, stackTrace)
 
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {

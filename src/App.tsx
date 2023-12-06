@@ -3,20 +3,19 @@ import { type ChangeEvent, useState } from 'react'
 
 import { SourceMap } from './SourceMap.ts'
 import { StackTrace } from './StackTrace.ts'
-import { calcBindings } from './calcBindings.ts'
+import { calculateBindings } from './calculateBindings.ts'
 import { transform } from './transform.ts'
 import { useSourcemapsStore } from './useSourcemapsStore.ts'
 
 function App() {
   const [rawSourceMap, setRawSourceMap] = useState('')
   const { addSourceMaps, deleteSourceMap, sourceMaps } = useSourcemapsStore()
-
   const [rawStackTrace, setRawStackTrace] = useState<string>('')
 
-  const stackTrace = StackTrace.create(rawStackTrace) || undefined
+  const stackTrace = StackTrace.create(rawStackTrace)
   const isParseError = Boolean(rawStackTrace.trim()) && !stackTrace
 
-  const bindings = calcBindings(sourceMaps, stackTrace)
+  const bindings = calculateBindings(sourceMaps, stackTrace)
   const transformedStackTrace = transform(bindings, stackTrace)
 
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {

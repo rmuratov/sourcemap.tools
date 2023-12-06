@@ -2,7 +2,7 @@ import type { StackTrace } from './StackTrace.ts'
 
 import { SourceMap } from './SourceMap.ts'
 
-export function calcBindings(sourceMaps: SourceMap[], stackTrace?: StackTrace) {
+export function calculateBindings(sourceMaps: SourceMap[], stackTrace: StackTrace | null) {
   if (!stackTrace || stackTrace.fileNames.length === 0 || sourceMaps.length === 0) {
     return {}
   }

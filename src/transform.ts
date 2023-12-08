@@ -14,7 +14,7 @@ export function transform(bindings: Record<string, SourceMap>, stackTrace: Stack
 
   const transformed = stackTrace.frames.map(stackFrame =>
     generateStackTraceLine(
-      toUnifiedPosition(tryGetOriginalPosition(stackFrame, bindings) || stackFrame),
+      toUnifiedPosition(tryGetOriginalPosition(stackFrame, bindings) ?? stackFrame),
     ),
   )
 
@@ -73,7 +73,7 @@ function isNullableMappedPosition(
   return 'source' in position
 }
 
-type UnifiedPosition = {
+interface UnifiedPosition {
   column: null | number
   file: null | string
   line: null | number

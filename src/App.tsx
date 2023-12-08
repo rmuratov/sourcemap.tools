@@ -133,22 +133,26 @@ function App() {
             <div className="card-body">
               <h2 className="card-title">Source maps</h2>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                <input
-                  accept=".map,.txt"
-                  aria-label="Source map file input"
-                  className="file-input file-input-bordered"
-                  data-testid="sourcemap-file-input"
-                  id="sourcemap-file-input"
-                  multiple
-                  onChange={handleSourceMapFileInputChange}
-                  type="file"
-                />
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-2">
+                <label className="btn btn-neutral btn-block" htmlFor="sourcemap-file-input">
+                  Choose files
+                  <input
+                    accept=".map,.txt"
+                    aria-label="Source map file input"
+                    className="file-input file-input-bordered"
+                    data-testid="sourcemap-file-input"
+                    hidden
+                    id="sourcemap-file-input"
+                    multiple
+                    onChange={handleSourceMapFileInputChange}
+                    type="file"
+                  />
+                </label>
 
-                <div className="form-control">
+                <div className="form-control lg:col-span-3">
                   <textarea
                     aria-label="Source map content textarea"
-                    className="textarea textarea-bordered resize-none font-mono h-0"
+                    className="textarea textarea-bordered resize-none font-mono h-0 whitespace-nowrap"
                     data-testid="sourcemap-textarea"
                     id="sourcemap-textarea"
                     onChange={handleSourceMapTextAreaChange}
@@ -182,7 +186,7 @@ function App() {
         </div>
       </div>
 
-      <footer className="footer bg-base-200 p-10 mt-10">
+      <footer className="footer bg-base-200 p-4 mt-10">
         <nav>
           <a className="link link-hover" href="https://github.com/rmuratov/sourcemap.tools">
             GitHub

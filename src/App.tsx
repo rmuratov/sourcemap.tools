@@ -133,8 +133,11 @@ function App() {
             <div className="card-body">
               <h2 className="card-title">Source maps</h2>
 
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-2">
-                <label className="btn btn-neutral btn-block" htmlFor="sourcemap-file-input">
+              <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
+                <label
+                  className="btn btn-neutral btn-block lg:col-span-2"
+                  htmlFor="sourcemap-file-input"
+                >
                   Choose files
                   <input
                     accept=".map,.txt"
@@ -149,7 +152,7 @@ function App() {
                   />
                 </label>
 
-                <div className="form-control lg:col-span-3">
+                <div className="form-control lg:col-span-4">
                   <textarea
                     aria-label="Source map content textarea"
                     className="textarea textarea-bordered resize-none font-mono h-0 whitespace-nowrap"
@@ -186,7 +189,7 @@ function App() {
         </div>
       </div>
 
-      <footer className="footer bg-base-200 p-4 mt-10">
+      <footer className="footer bg-base-200 p-4 mt-8">
         <nav>
           <a className="link link-hover" href="https://github.com/rmuratov/sourcemap.tools">
             GitHub

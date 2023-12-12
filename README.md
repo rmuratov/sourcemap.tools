@@ -1,27 +1,38 @@
-# React + TypeScript + Vite
+# sourcemap.tools
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![image](public/app-demo.jpeg)
 
-Currently, two official plugins are available:
+This repo is the source code for the https://sourcemap.tools.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This little web app allows you to paste a stack trace of minified JavaScript code, apply source maps to it and see the original positions of the errors.
 
-## Expanding the ESLint configuration
+The application may be useful for investigating errors in production if you do not host source maps, but still can extract them from build artifacts.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+Inspired by https://sourcemaps.info/, but does everything on the client and does not try to fetch sources or sourcemaps.
 
-- Configure the top-level `parserOptions` property like this:
+## How to use
 
-```js
-   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-   },
-```
+1. Paste your stack trace on the left.
+2. Provide source maps either by choosing files or pasting the content of the source map.
+3. See results on the right.
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+## Development
+
+1. Clone repo
+2. Go to the project directory and install deps
+
+   ```shell
+   npm ci
+   ```
+
+3. Run and go to http://localhost:5173/
+
+   ```shell
+   npm run dev
+   ```
+
+4. Optionally run tests
+
+   ```shell
+   npm test
+   ```

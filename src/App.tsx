@@ -3,20 +3,18 @@ import { type ChangeEvent, useState } from 'react'
 
 import { SourceMap } from './SourceMap.ts'
 import { StackTrace } from './StackTrace.ts'
-import { calculateBindings } from './calculateBindings.ts'
 import { transform } from './transform.ts'
 import { useSourcemapsStore } from './useSourcemapsStore.ts'
 
 function App() {
-  const [rawStackTrace, setRawStackTrace] = useState('')
-  const [rawSourceMap, setRawSourceMap] = useState('')
+  const [stackTraceInputValue, setStackTraceInputValue] = useState('')
+  const [sourceMapInputValue, setSourceMapInputValue] = useState('')
   const { addSourceMaps, deleteSourceMap, sourceMaps } = useSourcemapsStore()
 
-  const stackTrace = StackTrace.create(rawStackTrace)
-  const isParseError = Boolean(rawStackTrace.trim()) && !stackTrace
+  const stackTrace = StackTrace.create(stackTraceInputValue)
+  const isParseError = Boolean(stackTraceInputValue.trim()) && !stackTrace
 
-  const bindings = calculateBindings(sourceMaps, stackTrace)
-  const transformedStackTrace = transform(bindings, stackTrace)
+  const transformedStackTrace = transform(sourceMaps, stackTrace)
 
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     if (!event.target.files) {
@@ -41,7 +39,7 @@ function App() {
   async function handleSourceMapTextAreaChange(event: ChangeEvent<HTMLTextAreaElement>) {
     const text = event.target.value
 
-    setRawSourceMap(text)
+    setSourceMapInputValue(text)
 
     const sm = await SourceMap.create(text)
 
@@ -51,7 +49,7 @@ function App() {
     }
 
     addSourceMaps(sm)
-    setRawSourceMap('')
+    setSourceMapInputValue('')
   }
 
   function notify(message: string) {
@@ -80,7 +78,7 @@ function App() {
                 isParseError && 'textarea-warning',
               )}
               data-testid="stacktrace-textarea"
-              onChange={event => setRawStackTrace(event.target.value)}
+              onChange={event => setStackTraceInputValue(event.target.value)}
               placeholder="Paste the stack trace of the JavaScript error here"
             ></textarea>
 
@@ -158,7 +156,7 @@ function App() {
                     id="sourcemap-textarea"
                     onChange={handleSourceMapTextAreaChange}
                     placeholder="Or paste the contents of the source map here"
-                    value={rawSourceMap}
+                    value={sourceMapInputValue}
                   ></textarea>
                 </div>
               </div>

@@ -11,8 +11,8 @@ describe('general', () => {
   })
 })
 
-describe('stack trace', () => {
-  test('parses stack trace', async () => {
+describe('stack trace related', () => {
+  test('parses stack trace and shows file names', async () => {
     render(<App />)
     const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
 
@@ -27,95 +27,89 @@ describe('stack trace', () => {
     expect(within(filenamesList).getByText('index-d803759c.js')).toBeInTheDocument()
     expect(within(filenamesList).getByText('vendor-221d27ba.js')).toBeInTheDocument()
   })
-})
 
-describe('sourcemaps', () => {
-  describe('file input', () => {
-    test('multiple sourcemaps at once', async () => {
-      render(<App />)
-      const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
-      const resultTextArea = screen.getByTestId('result-textarea')
+  test('the result is cleared after deleting stack trace', async () => {
+    render(<App />)
 
-      stacktraceTextarea.focus()
-      await userEvent.paste(regular.stacktrace)
-      expect(resultTextArea).toHaveValue('')
+    const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
+    const resultTextArea = screen.getByTestId('result-textarea')
 
-      const sourcemapFileInput = screen.getByTestId('sourcemap-file-input')
-      const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
-      await userEvent.upload(sourcemapFileInput, files)
-      await waitFor(() => expect(resultTextArea).toHaveValue(regular.result))
-    })
-  })
+    stacktraceTextarea.focus()
+    await userEvent.paste(regular.stacktrace)
 
-  describe('textarea', () => {
-    test('pasting whole sourcemap', async () => {
-      render(<App />)
+    const sourceMapFileInput = screen.getByTestId('sourcemap-file-input')
+    const file = new File([regular.sourcemaps[0].content], regular.sourcemaps[0].fileName)
+    await userEvent.upload(sourceMapFileInput, file)
 
-      const sourcemapTextarea = screen.getByTestId('sourcemap-textarea')
-      sourcemapTextarea.focus()
-      await userEvent.paste(regular.sourcemaps[0].content)
+    await waitFor(() => expect(resultTextArea).toHaveValue())
 
-      const sourcemapList = screen.getByTestId('sourcemaps-list')
-      expect(sourcemapList).toBeInTheDocument()
-      expect(within(sourcemapList).getByText('index-d803759c.js')).toBeInTheDocument()
-    })
-  })
+    await userEvent.clear(stacktraceTextarea)
 
-  describe('deleting', () => {
-    test('updates related lines after deleting sourcemap', async () => {
-      render(<App />)
-
-      const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
-      const resultTextArea = screen.getByTestId('result-textarea')
-
-      stacktraceTextarea.focus()
-      await userEvent.paste(regular.stacktrace)
-
-      const sourcemapFileInput = screen.getByTestId('sourcemap-file-input')
-      const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
-      await userEvent.upload(sourcemapFileInput, files)
-
-      await userEvent.click(screen.getAllByText('delete')[0])
-
-      await waitFor(() => expect(resultTextArea).toHaveValue(regular.afterDeleteIndex))
-    })
-
-    test('shows empty result if there are no sourcemaps', async () => {
-      render(<App />)
-
-      const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
-      const resultTextArea = screen.getByTestId('result-textarea')
-
-      stacktraceTextarea.focus()
-      await userEvent.paste(regular.stacktrace)
-
-      const sourcemapFileInput = screen.getByTestId('sourcemap-file-input')
-      const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
-      await userEvent.upload(sourcemapFileInput, files)
-
-      await Promise.all(screen.getAllByText('delete').map(btn => userEvent.click(btn)))
-
-      await waitFor(() => expect(resultTextArea).toHaveValue(''))
-    })
+    await waitFor(() => expect(resultTextArea).toHaveValue(''))
   })
 })
 
-test('the resulting textarea is cleared if the stack trace is deleted', async () => {
-  render(<App />)
+describe('source maps related', () => {
+  test('allows selecting multiple source map files', async () => {
+    render(<App />)
+    const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
+    const resultTextArea = screen.getByTestId('result-textarea')
 
-  const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
-  const resultTextArea = screen.getByTestId('result-textarea')
+    stacktraceTextarea.focus()
+    await userEvent.paste(regular.stacktrace)
+    expect(resultTextArea).toHaveValue('')
 
-  stacktraceTextarea.focus()
-  await userEvent.paste(regular.stacktrace)
+    const sourceMapFileInput = screen.getByTestId('sourcemap-file-input')
+    const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
+    await userEvent.upload(sourceMapFileInput, files)
+    await waitFor(() => expect(resultTextArea).toHaveValue(regular.result))
+  })
 
-  const sourcemapFileInput = screen.getByTestId('sourcemap-file-input')
-  const file = new File([regular.sourcemaps[0].content], regular.sourcemaps[0].fileName)
-  await userEvent.upload(sourcemapFileInput, file)
+  test('allows pasting source map contents', async () => {
+    render(<App />)
 
-  expect(resultTextArea).toHaveValue()
+    const sourcemapTextarea = screen.getByTestId('sourcemap-textarea')
+    sourcemapTextarea.focus()
+    await userEvent.paste(regular.sourcemaps[0].content)
 
-  await userEvent.clear(stacktraceTextarea)
+    const sourcemapList = screen.getByTestId('sourcemaps-list')
+    expect(sourcemapList).toBeInTheDocument()
+    expect(within(sourcemapList).getByText('index-d803759c.js')).toBeInTheDocument()
+  })
 
-  await waitFor(() => expect(resultTextArea).toHaveValue(''))
+  test('updates related lines in the result after deleting sourcemap', async () => {
+    render(<App />)
+
+    const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
+    const resultTextArea = screen.getByTestId('result-textarea')
+
+    stacktraceTextarea.focus()
+    await userEvent.paste(regular.stacktrace)
+
+    const sourceMapFileInput = screen.getByTestId('sourcemap-file-input')
+    const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
+    await userEvent.upload(sourceMapFileInput, files)
+
+    await userEvent.click(screen.getAllByText('delete')[0])
+
+    await waitFor(() => expect(resultTextArea).toHaveValue(regular.afterDeleteIndex))
+  })
+
+  test('shows empty result if there are no sourcemaps', async () => {
+    render(<App />)
+
+    const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
+    const resultTextArea = screen.getByTestId('result-textarea')
+
+    stacktraceTextarea.focus()
+    await userEvent.paste(regular.stacktrace)
+
+    const sourceMapFileInput = screen.getByTestId('sourcemap-file-input')
+    const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
+    await userEvent.upload(sourceMapFileInput, files)
+
+    await Promise.all(screen.getAllByText('delete').map(btn => userEvent.click(btn)))
+
+    await waitFor(() => expect(resultTextArea).toHaveValue(''))
+  })
 })

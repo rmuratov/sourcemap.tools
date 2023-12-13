@@ -5,7 +5,11 @@ import { type NullableMappedPosition } from 'source-map'
 import type { SourceMap } from './SourceMap.ts'
 import type { StackTrace } from './StackTrace.ts'
 
-export function transform(bindings: Record<string, SourceMap>, stackTrace: StackTrace | null) {
+import { calculateBindings } from './calculateBindings.ts'
+
+export function transform(sourceMaps: SourceMap[], stackTrace: StackTrace | null) {
+  const bindings = calculateBindings(sourceMaps, stackTrace)
+
   if (!stackTrace || Object.keys(bindings).length === 0) {
     return ''
   }

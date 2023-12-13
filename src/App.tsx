@@ -20,7 +20,7 @@ function App() {
 
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     if (!event.target.files) {
-      return undefined
+      return
     }
 
     const sourceMaps = await Promise.all(
@@ -80,9 +80,7 @@ function App() {
                 isParseError && 'textarea-warning',
               )}
               data-testid="stacktrace-textarea"
-              onChange={event => {
-                setRawStackTrace(event.target.value)
-              }}
+              onChange={event => setRawStackTrace(event.target.value)}
               placeholder="Paste the stack trace of the JavaScript error here"
             ></textarea>
 

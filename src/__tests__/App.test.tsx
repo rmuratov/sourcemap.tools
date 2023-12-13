@@ -11,7 +11,7 @@ describe('general', () => {
   })
 })
 
-describe('stack trace related', () => {
+describe('stack trace', () => {
   test('parses stack trace and shows file names', async () => {
     render(<App />)
     const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
@@ -28,7 +28,24 @@ describe('stack trace related', () => {
     expect(within(filenamesList).getByText('vendor-221d27ba.js')).toBeInTheDocument()
   })
 
-  test('the result is cleared after deleting stack trace', async () => {
+  test('shows warning if parsing failed', async () => {
+    render(<App />)
+    const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
+
+    expect(screen.queryByTestId('filenames-list')).not.toBeInTheDocument()
+
+    stacktraceTextarea.focus()
+    await userEvent.paste('lorem ipsum')
+    expect(stacktraceTextarea).toHaveValue('lorem ipsum')
+
+    const label = screen.queryByTestId('stacktrace-textarea-label')
+    await waitFor(() =>
+      expect(label).toHaveTextContent('It seems that the text you pasted is not a stack trace'),
+    )
+    await waitFor(() => expect(label).toHaveClass('text-warning'))
+  })
+
+  test('clears the result after deleting stack trace', async () => {
     render(<App />)
 
     const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
@@ -49,7 +66,7 @@ describe('stack trace related', () => {
   })
 })
 
-describe('source maps related', () => {
+describe('source maps', () => {
   test('allows selecting multiple source map files', async () => {
     render(<App />)
     const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')
@@ -95,7 +112,7 @@ describe('source maps related', () => {
     await waitFor(() => expect(resultTextArea).toHaveValue(regular.afterDeleteIndex))
   })
 
-  test('shows empty result if there are no sourcemaps', async () => {
+  test('shows empty result after deleting all sourcemaps', async () => {
     render(<App />)
 
     const stacktraceTextarea = screen.getByTestId('stacktrace-textarea')

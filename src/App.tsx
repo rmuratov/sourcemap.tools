@@ -83,7 +83,10 @@ function App() {
             ></textarea>
 
             <label className="label">
-              <span className={cx('label-text-alt', isParseError && 'text-warning')}>
+              <span
+                className={cx('label-text-alt', isParseError && 'text-warning')}
+                data-testid="stacktrace-textarea-label"
+              >
                 {isParseError
                   ? 'It seems that the text you pasted is not a stack trace'
                   : 'Paste the stack trace here'}

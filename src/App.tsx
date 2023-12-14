@@ -11,12 +11,17 @@ function App() {
   const [sourceMapInputValue, setSourceMapInputValue] = useState('')
   const { addSourceMaps, deleteSourceMap, sourceMaps } = useSourcemapsStore()
 
+  const [isSourceMapInputError, setIsSourceMapInputError] = useState(false)
+  const [isSourceMapFileInputError, setIsSourceMapFileInputError] = useState(false)
+
   const stackTrace = StackTrace.create(stackTraceInputValue)
   const isParseError = Boolean(stackTraceInputValue.trim()) && !stackTrace
 
   const transformedStackTrace = transform(sourceMaps, stackTrace)
 
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {
+    setIsSourceMapFileInputError(false)
+
     if (!event.target.files) {
       return
     }
@@ -28,7 +33,7 @@ function App() {
     )
 
     if (sourceMaps.some(sm => !sm)) {
-      notify('It seems that some files are not source maps')
+      setIsSourceMapFileInputError(true)
     }
 
     addSourceMaps(sourceMaps)
@@ -44,17 +49,13 @@ function App() {
     const sm = await SourceMap.create(text)
 
     if (!sm) {
-      notify('It seems that the text you pasted is not a source map')
+      setIsSourceMapInputError(Boolean(text) && true)
       return
     }
 
     addSourceMaps(sm)
     setSourceMapInputValue('')
-  }
-
-  function notify(message: string) {
-    // TODO: Implement notifications
-    console.log(message)
+    setIsSourceMapInputError(false)
   }
 
   return (
@@ -133,36 +134,63 @@ function App() {
               <h2 className="card-title">Source maps</h2>
 
               <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
-                <label
-                  className="btn btn-neutral btn-block lg:col-span-2"
-                  htmlFor="sourcemap-file-input"
-                >
-                  Choose files
-                  <input
-                    accept=".map,.txt"
-                    aria-label="Source map file input"
-                    className="file-input file-input-bordered"
-                    data-testid="sourcemap-file-input"
-                    hidden
-                    id="sourcemap-file-input"
-                    multiple
-                    onChange={handleSourceMapFileInputChange}
-                    type="file"
-                  />
-                </label>
-
+                <div className="form-control lg:col-span-2">
+                  <label className="btn btn-neutral btn-block" htmlFor="sourcemap-file-input">
+                    Choose files
+                    <input
+                      accept=".map,.txt"
+                      aria-label="Source map file input"
+                      className="file-input file-input-bordered"
+                      data-testid="sourcemap-file-input"
+                      hidden
+                      id="sourcemap-file-input"
+                      multiple
+                      onChange={handleSourceMapFileInputChange}
+                      type="file"
+                    />
+                  </label>
+                </div>
                 <div className="form-control lg:col-span-4">
                   <textarea
                     aria-label="Source map content textarea"
-                    className="textarea textarea-bordered resize-none font-mono h-0 whitespace-nowrap"
+                    className={cx(
+                      'textarea textarea-bordered resize-none font-mono h-0 whitespace-nowrap',
+                      isSourceMapInputError && 'textarea-warning',
+                    )}
                     data-testid="sourcemap-textarea"
                     id="sourcemap-textarea"
                     onChange={handleSourceMapTextAreaChange}
                     placeholder="Or paste the contents of the source map here"
                     value={sourceMapInputValue}
                   ></textarea>
+
+                  {isSourceMapInputError && (
+                    <label className="label">
+                      <span
+                        className={cx('label-text-alt text-warning')}
+                        data-testid="sourcemap-textarea-label"
+                      >
+                        Provided text is not a source map
+                      </span>
+                    </label>
+                  )}
                 </div>
               </div>
+
+              {isSourceMapFileInputError && (
+                <div className="alert alert-warning flex justify-between" role="alert">
+                  <span>Some of the files were not source maps</span>
+
+                  <div>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => setIsSourceMapFileInputError(false)}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {sourceMaps.length ? (
                 <ul className="space-y-2" data-testid="sourcemaps-list">

@@ -3,7 +3,7 @@ import { type ChangeEvent, useState } from 'react'
 
 import { SourceMap } from './SourceMap.ts'
 import { StackTrace } from './StackTrace.ts'
-import { transform } from './transform.ts'
+import { transform } from './lib.ts'
 import { useSourcemapsStore } from './useSourcemapsStore.ts'
 
 function App() {

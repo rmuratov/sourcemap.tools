@@ -46,14 +46,14 @@ function App() {
 
     setSourceMapInputValue(text)
 
-    const sm = await SourceMap.create(text)
+    const sourceMap = await SourceMap.create(text)
 
-    if (!sm) {
+    if (!sourceMap) {
       setIsSourceMapInputError(Boolean(text) && true)
       return
     }
 
-    addSourceMaps(sm)
+    addSourceMaps(sourceMap)
     setSourceMapInputValue('')
     setIsSourceMapInputError(false)
   }

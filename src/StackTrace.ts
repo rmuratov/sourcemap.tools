@@ -43,8 +43,3 @@ export class StackTrace {
     return Array.from(files)
   }
 }
-
-export type ParsedStackTrace = {
-  frames: StackFrame[]
-  message: string
-}

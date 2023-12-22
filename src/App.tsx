@@ -99,16 +99,12 @@ function App() {
                 'textarea textarea-bordered h-96 resize-none font-mono whitespace-pre leading-snug',
                 isParseError && 'textarea-warning',
               )}
-              data-testid="stacktrace-textarea"
               onChange={event => setStackTraceInputValue(event.target.value)}
               placeholder="Paste the stack trace of the JavaScript error here"
             ></textarea>
 
             <label className="label">
-              <span
-                className={cx('label-text-alt', isParseError && 'text-warning')}
-                data-testid="stacktrace-textarea-label"
-              >
+              <span className={cx('label-text-alt', isParseError && 'text-warning')}>
                 {isParseError
                   ? 'It seems that the text you pasted is not a stack trace'
                   : 'Paste the stack trace here'}
@@ -120,7 +116,6 @@ function App() {
             <textarea
               aria-label="Original stack trace"
               className="textarea textarea-bordered  h-96 resize-none font-mono whitespace-pre leading-snug"
-              data-testid="result-textarea"
               readOnly
               value={transformedStackTrace}
             ></textarea>
@@ -134,10 +129,12 @@ function App() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-5">
           <div className="card card-bordered card-compact rounded-lg">
             <div className="card-body">
-              <h2 className="card-title">Extracted file names</h2>
+              <h2 className="card-title" id="filenames-list-header">
+                Extracted file names
+              </h2>
 
               {stackTrace?.fileNames.length ? (
-                <ul className="space-y-2" data-testid="filenames-list">
+                <ul aria-labelledby="filenames-list-header" className="space-y-2">
                   {stackTrace.fileNames.map(fileName => (
                     <li className="font-mono list-disc list-inside" key={fileName}>
                       {fileName}
@@ -156,13 +153,18 @@ function App() {
 
               <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
                 <div className="form-control lg:col-span-2">
-                  <label className="btn btn-neutral btn-block" htmlFor="sourcemap-file-input">
+                  <label
+                    className="btn btn-neutral btn-block"
+                    htmlFor="sourcemap-file-input"
+                    id="file-upload-button"
+                    role="button"
+                    tabIndex={0}
+                  >
                     Choose files
                     <input
                       accept=".map,.txt"
-                      aria-label="Source map file input"
+                      aria-labelledby="file-upload-button"
                       className="file-input file-input-bordered"
-                      data-testid="sourcemap-file-input"
                       hidden
                       id="sourcemap-file-input"
                       multiple
@@ -178,7 +180,6 @@ function App() {
                       'textarea textarea-bordered resize-none font-mono h-0 whitespace-nowrap',
                       isSourceMapInputError && 'textarea-warning',
                     )}
-                    data-testid="sourcemap-textarea"
                     id="sourcemap-textarea"
                     onChange={handleSourceMapTextAreaChange}
                     placeholder="Or paste the contents of the source map here"
@@ -187,10 +188,7 @@ function App() {
 
                   {isSourceMapInputError && (
                     <label className="label">
-                      <span
-                        className={cx('label-text-alt text-warning')}
-                        data-testid="sourcemap-textarea-label"
-                      >
+                      <span className={cx('label-text-alt text-warning')}>
                         Provided text is not a source map
                       </span>
                     </label>
@@ -214,7 +212,7 @@ function App() {
               )}
 
               {sourceMaps.length ? (
-                <ul className="space-y-2" data-testid="sourcemaps-list">
+                <ul aria-label="Sourcemaps list" className="space-y-2">
                   {sourceMaps.map(m => (
                     <li className="font-mono list-disc list-inside" key={m.id}>
                       {m.fileName ?? m.fileNameInline ?? `NO NAME (Generated id: ${m.id})`}{' '}

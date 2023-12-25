@@ -157,6 +157,11 @@ function App() {
                     className="btn btn-neutral btn-block"
                     htmlFor="sourcemap-file-input"
                     id="file-upload-button"
+                    onKeyDown={event => {
+                      if (event.code === 'Enter') {
+                        event.currentTarget.click()
+                      }
+                    }}
                     role="button"
                     tabIndex={0}
                   >

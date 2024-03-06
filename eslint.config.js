@@ -11,8 +11,8 @@ import tsEslintPlugin from 'typescript-eslint'
 
 export default tsEslintPlugin.config(
   eslint.configs.recommended,
-  ...tsEslintPlugin.configs.strict,
-  ...tsEslintPlugin.configs.stylistic,
+  ...tsEslintPlugin.configs.strictTypeChecked,
+  ...tsEslintPlugin.configs.stylisticTypeChecked,
   perfectionistNatural,
   {
     files: ['src/**/*.{ts,tsx}'],
@@ -27,10 +27,15 @@ export default tsEslintPlugin.config(
       'react-refresh': reactRefreshPlugin,
     },
     rules: {
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       ...reactPlugin.configs.recommended.rules,
       ...hooksPlugin.configs.recommended.rules,
       ...reactPlugin.configs['jsx-runtime'].rules,
+      '@typescript-eslint/no-confusing-void-expression': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
     settings: {
       react: {
@@ -46,6 +51,18 @@ export default tsEslintPlugin.config(
     rules: {
       ...testingLibraryPlugin.configs.react.rules,
     },
+  },
+  {
+    languageOptions: {
+      parserOptions: {
+        project: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    extends: [tsEslintPlugin.configs.disableTypeChecked],
+    files: ['**/*.js'],
   },
   configPrettier,
 )

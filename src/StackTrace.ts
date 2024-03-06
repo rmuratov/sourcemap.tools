@@ -36,7 +36,7 @@ export class StackTrace {
   }
 
   #extractFileNames(frames: StackFrame[]) {
-    const files: Set<string> = new Set()
+    const files = new Set<string>()
 
     frames.forEach(f => f.file && files.add(f.file))
 

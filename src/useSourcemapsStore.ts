@@ -5,7 +5,7 @@ import { SourceMap } from './SourceMap.ts'
 export function useSourcemapsStore() {
   const [sourceMaps, setSourceMaps] = useState<SourceMap[]>([])
 
-  function addSourceMaps(value: Array<SourceMap | null> | SourceMap) {
+  function addSourceMaps(value: (SourceMap | null)[] | SourceMap) {
     const newSourceMaps: SourceMap[] = []
 
     for (const sourceMap of Array.isArray(value) ? value : [value]) {

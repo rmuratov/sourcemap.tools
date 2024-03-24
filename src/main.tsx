@@ -1,3 +1,4 @@
+/* v8 ignore start */
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { SourceMapConsumer } from 'source-map'
@@ -22,3 +23,4 @@ ReactDOM.createRoot(container).render(
     <App />
   </React.StrictMode>,
 )
+/* v8 ignore end */

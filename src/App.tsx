@@ -22,14 +22,10 @@ function App() {
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     setIsSourceMapFileInputError(false)
 
-    if (!event.target.files) {
-      return
-    }
+    const files = event.target.files ?? []
 
     const sourceMaps = await Promise.all(
-      Array.from(event.target.files).map(file =>
-        file.text().then(text => SourceMap.create(text, file.name)),
-      ),
+      Array.from(files).map(file => file.text().then(text => SourceMap.create(text, file.name))),
     )
 
     if (sourceMaps.some(sm => !sm)) {

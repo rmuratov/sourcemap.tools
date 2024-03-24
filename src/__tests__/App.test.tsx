@@ -127,11 +127,76 @@ describe('source maps', () => {
 
     const sourceMapFileInput = screen.getByLabelText(/choose files/i)
     const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
-    await userEvent.upload(sourceMapFileInput, files)
+    await user.upload(sourceMapFileInput, files)
 
     const deleteButtons = await screen.findAllByRole('button', { name: 'delete' })
-    await Promise.all(deleteButtons.map(btn => userEvent.click(btn)))
+    await Promise.all(deleteButtons.map(btn => user.click(btn)))
 
     await waitFor(() => expect(resultTextArea).toHaveValue(''))
+  })
+
+  test('ignores empty files list', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    await user.upload(sourceMapFileInput, [])
+
+    const sourcemapList = screen.queryByRole('list', { name: /sourcemaps list/i })
+    expect(sourcemapList).not.toBeInTheDocument()
+  })
+
+  test('shows warning if the file is not source map', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    const file = new File(['lorem ipsum'], 'lorem_ipsum.txt')
+    await user.upload(sourceMapFileInput, file)
+
+    const warning = screen.getByText(/some of the files were not source maps/i)
+    expect(warning).toBeInTheDocument()
+
+    const dismissWarningBtn = screen.getByRole('button', { name: /dismiss/i })
+    await user.click(dismissWarningBtn)
+
+    expect(warning).not.toBeInTheDocument()
+  })
+
+  test('shows warning if the source map text content is not source map', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+
+    // TODO: Replace with userEvent.type? But need to escape spec. chars.
+    sourcemapTextarea.focus()
+    await user.paste('lorem ipsum')
+
+    const warning = screen.getByText(/provided text is not a source map/i)
+    expect(warning).toBeInTheDocument()
+
+    await user.clear(sourcemapTextarea)
+    expect(warning).not.toBeInTheDocument()
+  })
+
+  test('ignores existing source map', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
+    await user.upload(sourceMapFileInput, files)
+
+    const file = new File([regular.sourcemaps[0].content], regular.sourcemaps[0].fileName)
+    await user.upload(sourceMapFileInput, file)
+
+    const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(sourcemapList).toBeInTheDocument()
+
+    const filenamesListItems = within(sourcemapList).getAllByRole('listitem')
+    const fileNames = filenamesListItems.map(item => item.textContent)
+
+    expect(fileNames).toEqual(['index-d803759c.js.map delete', 'vendor-221d27ba.js.map delete'])
   })
 })

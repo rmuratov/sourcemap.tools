@@ -12,7 +12,7 @@ export function transform(sourceMaps: SourceMap[], stackTrace: StackTrace | null
     return ''
   }
 
-  const result = [stackTrace.message || '']
+  const result = [stackTrace.message]
 
   const transformed = stackTrace.frames.map(stackFrame =>
     generateStackTraceLine(
@@ -53,26 +53,18 @@ function toUnifiedPosition(position: NullableMappedPosition | StackFrame): Unifi
       line: position.lineNumber,
       method: position.methodName,
     }
-  } else if (isNullableMappedPosition(position)) {
-    return {
-      column: position.column,
-      file: position.source,
-      line: position.line,
-      method: position.name,
-    }
-  } else {
-    throw new Error('Unknown position type')
+  }
+
+  return {
+    column: position.column,
+    file: position.source,
+    line: position.line,
+    method: position.name,
   }
 }
 
 function isStackFrame(position: NullableMappedPosition | StackFrame): position is StackFrame {
   return 'lineNumber' in position
-}
-
-function isNullableMappedPosition(
-  position: NullableMappedPosition | StackFrame,
-): position is NullableMappedPosition {
-  return 'source' in position
 }
 
 interface UnifiedPosition {

@@ -33,7 +33,7 @@ export class SourceMap {
       parsed = null
     }
 
-    if (!parsed || (!SourceMap.isRawSourceMap(parsed) && !SourceMap.isRawIndexMap(parsed))) {
+    if (!parsed || !SourceMap.isRawSourceMap(parsed)) {
       return null
     }
 
@@ -41,10 +41,6 @@ export class SourceMap {
     const fileNameInline = parsed.file
 
     return new SourceMap(consumer, fileNameInline, sourceMapFileName)
-  }
-
-  static isRawIndexMap(sourceMap: RawIndexMap | RawSourceMap): sourceMap is RawIndexMap {
-    return 'version' in sourceMap && 'sections' in sourceMap
   }
 
   static isRawSourceMap(sourceMap: RawIndexMap | RawSourceMap): sourceMap is RawSourceMap {

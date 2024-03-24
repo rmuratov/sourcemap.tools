@@ -35,6 +35,7 @@ export default tsEslintPlugin.config(
       '@typescript-eslint/no-unnecessary-condition': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
     settings: {

@@ -9,6 +9,7 @@
     "lint": "eslint --max-warnings 0 \"src/**/*.{ts,tsx}\"",
     "preview": "vite preview",
     "test": "vitest",
+    "ts": "tsc",
     "coverage": "vitest run --coverage"
   },
   "dependencies": {

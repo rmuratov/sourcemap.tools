@@ -199,4 +199,13 @@ describe('source maps', () => {
 
     expect(fileNames).toEqual(['index-d803759c.js.map delete', 'vendor-221d27ba.js.map delete'])
   })
+
+  test('allows selection files using keyboard', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    sourceMapFileInput.focus()
+    await user.keyboard('[Enter]')
+  })
 })

@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest'
 
 import App from '../App.tsx'
 import { regular } from './fixtures'
+import { mockPrefersColorScheme } from './setup.ts'
 
 describe('general', () => {
   test('renders', () => {
@@ -208,5 +209,36 @@ describe('source maps', () => {
     const sourceMapFileInput = screen.getByLabelText(/choose files/i)
     sourceMapFileInput.focus()
     await user.keyboard('[Enter]')
+  })
+})
+
+describe('theme', () => {
+  test('renders with light theme if prefers light theme', () => {
+    vi.restoreAllMocks()
+    mockPrefersColorScheme(false)
+
+    render(<App />)
+    expect(screen.getByRole('main')).toHaveAttribute('data-theme', 'light')
+  })
+
+  test('renders with dark theme if prefers dark theme', () => {
+    vi.restoreAllMocks()
+    mockPrefersColorScheme(true)
+
+    render(<App />)
+    expect(screen.getByRole('main')).toHaveAttribute('data-theme', 'dark')
+  })
+
+  test('allows changing the theme', async () => {
+    vi.restoreAllMocks()
+    mockPrefersColorScheme(false)
+    render(<App />)
+    expect(screen.getByRole('main')).toHaveAttribute('data-theme', 'light')
+    const themeToggleButton = screen.getByRole('checkbox', { name: /toggle theme/i })
+    await userEvent.click(themeToggleButton)
+    expect(screen.getByRole('main')).toHaveAttribute('data-theme', 'dark')
+
+    await userEvent.click(themeToggleButton)
+    expect(screen.getByRole('main')).toHaveAttribute('data-theme', 'light')
   })
 })

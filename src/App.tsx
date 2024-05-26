@@ -56,7 +56,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div className="px-4 flex-1">
+      <div className="px-4 flex-1 2xl:container 2xl:mx-auto">
         <div className="navbar px-0">
           <div className="navbar-start">
             <a className="normal-case text-xl" href="/">
@@ -236,8 +236,8 @@ function App() {
         </div>
       </div>
 
-      <footer className="footer bg-base-200 p-4 mt-8">
-        <nav>
+      <footer className="footer bg-base-200 p-4 mt-8 ">
+        <nav className="2xl:container 2xl:mx-auto">
           <a className="link link-hover" href="https://github.com/rmuratov/sourcemap.tools">
             GitHub
           </a>

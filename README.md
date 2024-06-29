@@ -1,5 +1,7 @@
 # sourcemap.tools
 
+![example workflow](https://github.com/rmuratov/sourcemap.tools/actions/workflows/node.js.yml/badge.svg)
+
 ![image](public/app-demo.jpeg)
 
 This repo contains the source code for the https://sourcemap.tools.

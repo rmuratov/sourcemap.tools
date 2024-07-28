@@ -1,9 +1,9 @@
 import cx from 'clsx'
 import { type ChangeEvent, useState } from 'react'
 
+import { transform } from './lib.ts'
 import { SourceMap } from './SourceMap.ts'
 import { StackTrace } from './StackTrace.ts'
-import { transform } from './lib.ts'
 import { useSourcemapsStore } from './useSourcemapsStore.ts'
 
 function App() {

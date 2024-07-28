@@ -5,7 +5,7 @@ import { type NullableMappedPosition } from 'source-map'
 import type { SourceMap } from './SourceMap.ts'
 import type { StackTrace } from './StackTrace.ts'
 
-export function transform(sourceMaps: SourceMap[], stackTrace: StackTrace | null) {
+export function transform(sourceMaps: SourceMap[], stackTrace: null | StackTrace) {
   const bindings = calculateBindings(sourceMaps, stackTrace)
 
   if (!stackTrace || Object.keys(bindings).length === 0) {
@@ -26,8 +26,8 @@ export function transform(sourceMaps: SourceMap[], stackTrace: StackTrace | null
 function tryGetOriginalPosition(
   stackFrame: StackFrame,
   bindings: Record<string, SourceMap>,
-): NullableMappedPosition | null {
-  let result: NullableMappedPosition | null = null
+): null | NullableMappedPosition {
+  let result: null | NullableMappedPosition = null
 
   const { column, file, line } = toUnifiedPosition(stackFrame)
 
@@ -74,7 +74,7 @@ interface UnifiedPosition {
   method: null | string
 }
 
-function calculateBindings(sourceMaps: SourceMap[], stackTrace: StackTrace | null) {
+function calculateBindings(sourceMaps: SourceMap[], stackTrace: null | StackTrace) {
   if (!stackTrace || stackTrace.fileNames.length === 0 || sourceMaps.length === 0) {
     return {}
   }

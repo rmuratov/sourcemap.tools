@@ -5,8 +5,9 @@ import type {
   RawSourceMap,
 } from 'source-map'
 
-import { nanoid } from 'nanoid'
 import { SourceMapConsumer } from 'source-map'
+
+let id = 0
 
 export class SourceMap {
   consumer: BasicSourceMapConsumer | IndexedSourceMapConsumer
@@ -19,14 +20,14 @@ export class SourceMap {
     fileNameInline?: string,
     fileName?: string,
   ) {
-    this.id = nanoid()
+    this.id = id++
     this.consumer = consumer
     this.fileNameInline = fileNameInline
     this.fileName = fileName
   }
 
   static async create(rawSourceMap: string, sourceMapFileName?: string) {
-    let parsed: RawIndexMap | RawSourceMap | null
+    let parsed: null | RawIndexMap | RawSourceMap
     try {
       parsed = JSON.parse(rawSourceMap)
     } catch {

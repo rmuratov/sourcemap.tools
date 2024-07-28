@@ -2,7 +2,7 @@
 
 import eslint from '@eslint/js'
 import configPrettier from 'eslint-config-prettier'
-import perfectionistNatural from 'eslint-plugin-perfectionist/configs/recommended-natural'
+import perfectionist from 'eslint-plugin-perfectionist'
 import reactPlugin from 'eslint-plugin-react'
 import hooksPlugin from 'eslint-plugin-react-hooks'
 import reactRefreshPlugin from 'eslint-plugin-react-refresh'
@@ -13,7 +13,7 @@ export default tsEslintPlugin.config(
   eslint.configs.recommended,
   ...tsEslintPlugin.configs.strictTypeChecked,
   ...tsEslintPlugin.configs.stylisticTypeChecked,
-  perfectionistNatural,
+  perfectionist.configs['recommended-natural'],
   {
     files: ['src/**/*.{ts,tsx}'],
     linterOptions: {

@@ -13,7 +13,7 @@ export class SourceMap {
   consumer: BasicSourceMapConsumer | IndexedSourceMapConsumer
   fileName?: string
   fileNameInline?: string
-  id: string
+  id: number
 
   constructor(
     consumer: BasicSourceMapConsumer | IndexedSourceMapConsumer,

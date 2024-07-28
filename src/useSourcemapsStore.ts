@@ -17,7 +17,7 @@ export function useSourcemapsStore() {
     setSourceMaps(sourceMaps => [...sourceMaps, ...newSourceMaps])
   }
 
-  function deleteSourceMap(id: string) {
+  function deleteSourceMap(id: number) {
     const index = sourceMaps.findIndex(sm => sm.id === id)
     const sm = sourceMaps[index]
     sm.consumer.destroy()

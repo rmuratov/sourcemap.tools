@@ -242,6 +242,15 @@ function App() {
           <a className="link link-hover" href="https://github.com/rmuratov/sourcemap.tools">
             GitHub
           </a>
+
+          <button
+            onClick={() => {
+              throw new Error('Error!')
+            }}
+            style={{ display: 'none' }}
+          >
+            Generate error
+          </button>
         </nav>
       </footer>
     </main>

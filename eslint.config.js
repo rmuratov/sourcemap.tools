@@ -13,7 +13,13 @@ export default tsEslintPlugin.config(
   eslint.configs.recommended,
   ...tsEslintPlugin.configs.strictTypeChecked,
   ...tsEslintPlugin.configs.stylisticTypeChecked,
-  perfectionist.configs['recommended-natural'],
+  {
+    ...perfectionist.configs['recommended-natural'],
+    rules: {
+      ...perfectionist.configs['recommended-natural'].rules,
+      'perfectionist/sort-modules': 0,
+    },
+  },
   {
     files: ['src/**/*.{ts,tsx}'],
     linterOptions: {

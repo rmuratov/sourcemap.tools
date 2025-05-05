@@ -81,13 +81,31 @@ function calculateBindings(sourceMaps: SourceMap[], stackTrace: null | StackTrac
 
   const bindings: Record<string, SourceMap> = {}
 
+  // TODO: Cover filenames manipulations with tests
   for (const fileName of stackTrace.fileNames) {
+    const maybeFileNameFromPath = extractFileNameFromPath(fileName)
     for (const sourceMap of sourceMaps) {
-      if (fileName === sourceMap.fileNameInline || fileName === sourceMap.fileName) {
+      const cleanedSourceMapFileNameInline = cleanSourceMapFileName(sourceMap.fileNameInline)
+      const cleanedSourceMapFileName = cleanSourceMapFileName(sourceMap.fileName)
+      if (
+        fileName === cleanedSourceMapFileNameInline ||
+        fileName === cleanedSourceMapFileName ||
+        maybeFileNameFromPath === cleanedSourceMapFileNameInline ||
+        maybeFileNameFromPath === cleanedSourceMapFileName
+      ) {
         bindings[fileName] = sourceMap
       }
     }
   }
 
   return bindings
+}
+
+function extractFileNameFromPath(path: string): string {
+  const parts = path.split('/')
+  return parts[parts.length - 1]
+}
+
+function cleanSourceMapFileName(fileName?: string) {
+  return fileName?.replace(/\.map$/, '')
 }

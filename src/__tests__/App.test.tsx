@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { type ChangeEvent } from 'react'
 import { describe, expect, test, vi } from 'vitest'
 
 import App from '../App.tsx'
@@ -224,6 +225,47 @@ describe('source maps', () => {
     expect(clickSpy).toHaveBeenCalledOnce()
 
     clickSpy.mockRestore()
+  })
+
+  test('handles null files in file input', () => {
+    render(<App />)
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    
+    // Create a mock event with null files
+    const mockEvent = {
+      target: { files: null }
+    } as unknown as ChangeEvent<HTMLInputElement>
+
+    // Trigger the change event directly
+    fireEvent.change(sourceMapFileInput, mockEvent as Parameters<typeof fireEvent.change>[1])
+
+    // Should not crash and no source maps should be added
+    const sourcemapList = screen.queryByRole('list', { name: /sourcemaps list/i })
+    expect(sourcemapList).not.toBeInTheDocument()
+  })
+
+  test('displays fallback name when source map has no fileName or fileNameInline', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    // Create a source map with no filename info
+    const sourcemapContent = JSON.stringify({
+      mappings: 'AAAA',
+      names: [],
+      sources: ['test.js'],
+      version: 3
+    })
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste(sourcemapContent)
+
+    const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
+    const listItem = within(sourcemapList).getByRole('listitem')
+    
+    // Should display the fallback with generated ID
+    expect(listItem).toHaveTextContent(/NO NAME \(Generated id:/)
   })
 })
 

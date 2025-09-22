@@ -1,6 +1,6 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import App from '../App.tsx'
 import { regular } from './fixtures'
@@ -201,14 +201,29 @@ describe('source maps', () => {
     expect(fileNames).toEqual(['index-d803759c.js.map delete', 'vendor-221d27ba.js.map delete'])
   })
 
-  // TODO
-  test.skip('allows selection files using keyboard', async () => {
+  test('allows opening file selector using keyboard', () => {
     render(<App />)
-    const user = userEvent.setup()
 
-    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
-    sourceMapFileInput.focus()
-    await user.keyboard('[Enter]')
+    // Get the label element that handles keyboard interaction
+    const fileUploadButton = screen.getByRole('button', { name: /choose files/i })
+
+    // Verify the button is focusable
+    expect(fileUploadButton).toHaveAttribute('tabIndex', '0')
+
+    // Focus the button
+    fileUploadButton.focus()
+    expect(fileUploadButton).toHaveFocus()
+
+    // Mock the click method to test that it gets called by the keydown handler
+    const clickSpy = vi.spyOn(fileUploadButton, 'click')
+
+    // Fire the keydown event with Enter
+    fireEvent.keyDown(fileUploadButton, { code: 'Enter' })
+
+    // Verify that the keydown handler called click() on the current target
+    expect(clickSpy).toHaveBeenCalledOnce()
+
+    clickSpy.mockRestore()
   })
 })
 

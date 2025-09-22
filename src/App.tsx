@@ -88,12 +88,12 @@ function App() {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="form-control">
+          <fieldset className="fieldset p-0">
             <textarea
               aria-label="Minified stack trace"
               autoFocus
               className={cx(
-                'textarea textarea-bordered h-96 resize-none font-mono whitespace-pre leading-snug',
+                'textarea rounded-lg w-full h-96 resize-none font-mono whitespace-pre leading-snug',
                 isParseError && 'textarea-warning',
               )}
               onChange={event => setStackTraceInputValue(event.target.value)}
@@ -107,12 +107,12 @@ function App() {
                   : 'Paste the stack trace here'}
               </span>
             </label>
-          </div>
+          </fieldset>
 
-          <div className="form-control">
+          <fieldset className="fieldset p-0">
             <textarea
               aria-label="Original stack trace"
-              className="textarea textarea-bordered  h-96 resize-none font-mono whitespace-pre leading-snug"
+              className="textarea rounded-lg w-full h-96 resize-none font-mono whitespace-pre leading-snug"
               readOnly
               value={transformedStackTrace}
             ></textarea>
@@ -120,11 +120,11 @@ function App() {
             <label className="label">
               <span className="label-text-alt">See the results here</span>
             </label>
-          </div>
+          </fieldset>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-5">
-          <div className="card card-bordered card-compact rounded-lg border-neutral-content dark:border-opacity-20">
+          <div className="card card-border card-sm rounded-lg border-neutral-content dark:border-opacity-20">
             <div className="card-body">
               <h2 className="card-title" id="filenames-list-header">
                 Extracted file names
@@ -144,14 +144,14 @@ function App() {
             </div>
           </div>
 
-          <div className="card card-bordered card-compact rounded-lg border-neutral-content dark:border-opacity-20">
+          <div className="card card-border card-sm rounded-lg border-neutral-content dark:border-opacity-20">
             <div className="card-body">
               <h2 className="card-title">Source maps</h2>
 
               <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
-                <div className="form-control lg:col-span-2">
+                <div className="lg:col-span-2">
                   <label
-                    className="btn btn-neutral btn-block"
+                    className="btn btn-neutral btn-block h-full"
                     htmlFor="sourcemap-file-input"
                     id="file-upload-button"
                     onKeyDown={event => {
@@ -166,7 +166,7 @@ function App() {
                     <input
                       accept=".map,.txt"
                       aria-labelledby="file-upload-button"
-                      className="file-input file-input-bordered"
+                      className="file-input"
                       hidden
                       id="sourcemap-file-input"
                       multiple
@@ -175,11 +175,11 @@ function App() {
                     />
                   </label>
                 </div>
-                <div className="form-control lg:col-span-4">
+                <div className="lg:col-span-4">
                   <textarea
                     aria-label="Source map content textarea"
                     className={cx(
-                      'textarea textarea-bordered resize-none font-mono h-0 whitespace-nowrap',
+                      'textarea resize-none font-mono whitespace-nowrap w-full h-full min-h-auto py-1 px-2',
                       isSourceMapInputError && 'textarea-warning',
                     )}
                     id="sourcemap-textarea"

@@ -231,10 +231,10 @@ describe('source maps', () => {
     render(<App />)
 
     const sourceMapFileInput = screen.getByLabelText(/choose files/i)
-    
+
     // Create a mock event with null files
     const mockEvent = {
-      target: { files: null }
+      target: { files: null },
     } as unknown as ChangeEvent<HTMLInputElement>
 
     // Trigger the change event directly
@@ -254,7 +254,7 @@ describe('source maps', () => {
       mappings: 'AAAA',
       names: [],
       sources: ['test.js'],
-      version: 3
+      version: 3,
     })
 
     const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
@@ -263,7 +263,7 @@ describe('source maps', () => {
 
     const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
     const listItem = within(sourcemapList).getByRole('listitem')
-    
+
     // Should display the fallback with generated ID
     expect(listItem).toHaveTextContent(/NO NAME \(Generated id:/)
   })

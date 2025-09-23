@@ -1,15 +1,15 @@
 import cx from 'clsx'
 import { type ChangeEvent, useState } from 'react'
 
-import { GitHubLogo } from './GitHubLogo.tsx'
+import { GitHubLogo } from './git-hub-logo.tsx'
 import { transform } from './lib.ts'
-import { SourceMap } from './SourceMap.ts'
-import { StackTrace } from './StackTrace.ts'
-import { ThemeToggle } from './ThemeToggle.tsx'
-import { useSourcemapsStore } from './useSourcemapsStore.ts'
-import { setTheme, useTheme } from './useTheme.ts'
+import { SourceMap } from './source-map.ts'
+import { StackTrace } from './stack-trace.ts'
+import { ThemeToggle } from './theme-toggle.tsx'
+import { useSourcemapsStore } from './use-sourcemaps-store.ts'
+import { setTheme, useTheme } from './use-theme.ts'
 
-function App() {
+export default function App() {
   const [stackTraceInputValue, setStackTraceInputValue] = useState('')
   const [sourceMapInputValue, setSourceMapInputValue] = useState('')
   const { addSourceMaps, deleteSourceMap, sourceMaps } = useSourcemapsStore()
@@ -247,5 +247,3 @@ function App() {
     </main>
   )
 }
-
-export default App

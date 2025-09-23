@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { SourceMap } from './SourceMap.ts'
+import { SourceMap } from './source-map.ts'
 
 export function useSourcemapsStore() {
   const [sourceMaps, setSourceMaps] = useState<SourceMap[]>([])

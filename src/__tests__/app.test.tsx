@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { type ChangeEvent } from 'react'
 import { describe, expect, test, vi } from 'vitest'
 
-import App from '../App.tsx'
+import App from '../app.tsx'
 import { regular } from './fixtures'
 import { mockPrefersColorScheme } from './setup.ts'
 

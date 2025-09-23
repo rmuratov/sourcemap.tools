@@ -2,8 +2,8 @@ import type { StackFrame } from 'stacktrace-parser'
 
 import { type NullableMappedPosition } from 'source-map'
 
-import type { SourceMap } from './SourceMap.ts'
-import type { StackTrace } from './StackTrace.ts'
+import type { SourceMap } from './source-map.ts'
+import type { StackTrace } from './stack-trace.ts'
 
 export function transform(sourceMaps: SourceMap[], stackTrace: null | StackTrace) {
   const bindings = calculateBindings(sourceMaps, stackTrace)

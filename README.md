@@ -1,6 +1,7 @@
 # sourcemap.tools
 
 ![example workflow](https://github.com/rmuratov/sourcemap.tools/actions/workflows/node.js.yml/badge.svg)
+[![codecov](https://codecov.io/github/rmuratov/sourcemap.tools/graph/badge.svg?token=S2D14Y7JTN)](https://codecov.io/github/rmuratov/sourcemap.tools)
 
 ![image](public/app-demo.jpeg)
 

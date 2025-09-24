@@ -9,7 +9,7 @@ import { ThemeToggle } from './theme-toggle.tsx'
 import { useSourcemapsStore } from './use-sourcemaps-store.ts'
 import { setTheme, useTheme } from './use-theme.ts'
 
-export default function App({ title }: { title?: string}) {
+export default function App({ title }: { title?: string }) {
   const [stackTraceInputValue, setStackTraceInputValue] = useState('')
   const [sourceMapInputValue, setSourceMapInputValue] = useState('')
   const { addSourceMaps, deleteSourceMap, sourceMaps } = useSourcemapsStore()

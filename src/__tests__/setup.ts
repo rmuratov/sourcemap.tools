@@ -1,11 +1,15 @@
-import '@testing-library/jest-dom'
-import 'blob-polyfill' // we need this to be able to call the `file.text()`.
-import { vi } from 'vitest'
+import '@testing-library/jest-dom/vitest'
+import { cleanup } from '@testing-library/react'
+import { afterEach, vi } from 'vitest'
+
+afterEach(() => {
+  cleanup()
+})
 
 mockPrefersColorScheme(false)
 
 export function mockPrefersColorScheme(prefersDark: boolean) {
-  const matchMediaMock = vi.fn().mockImplementation(query => ({
+  const matchMediaMock = vi.fn(query => ({
     addEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
     matches: prefersDark,

@@ -224,7 +224,7 @@ describe('source maps', () => {
     // Verify that the keydown handler called click() on the current target
     expect(clickSpy).toHaveBeenCalledOnce()
 
-    clickSpy.mockRestore()
+    clickSpy.mockClear()
   })
 
   test('handles null files in file input', () => {

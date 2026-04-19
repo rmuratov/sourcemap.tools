@@ -267,6 +267,65 @@ describe('source maps', () => {
     // Should display the fallback with generated ID
     expect(listItem).toHaveTextContent(/NO NAME \(Generated id:/)
   })
+
+  test('decodes base64 data URL source map pasted into textarea', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+
+    const dataUrl = `data:application/json;base64,${btoa(regular.sourcemaps[0].content)}`
+
+    sourcemapTextarea.focus()
+    await user.paste(dataUrl)
+
+    const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('index-d803759c.js')
+  })
+
+  test('decodes base64 data URL with charset parameter', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+
+    const dataUrl = `data:application/json;charset=utf-8;base64,${btoa(regular.sourcemaps[0].content)}`
+
+    sourcemapTextarea.focus()
+    await user.paste(dataUrl)
+
+    const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('index-d803759c.js')
+  })
+
+  test('shows warning for malformed base64 data URL', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+
+    sourcemapTextarea.focus()
+    await user.paste('data:application/json;base64,!!!not-valid-base64!!!')
+
+    const warning = await screen.findByText(/provided text is not a source map/i)
+    expect(warning).toBeInTheDocument()
+
+    // The original (undecoded) value should remain in the textarea so the user can fix it.
+    expect(sourcemapTextarea).toHaveValue('data:application/json;base64,!!!not-valid-base64!!!')
+  })
+
+  test('treats plain source map text as non-base64', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+
+    sourcemapTextarea.focus()
+    await user.paste(regular.sourcemaps[1].content)
+
+    const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('vendor-221d27ba.js')
+  })
 })
 
 describe('theme', () => {

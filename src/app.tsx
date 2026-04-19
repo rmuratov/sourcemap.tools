@@ -9,7 +9,8 @@ import { ThemeToggle } from './theme-toggle.tsx'
 import { useSourcemapsStore } from './use-sourcemaps-store.ts'
 import { setTheme, useTheme } from './use-theme.ts'
 
-const base64PrefixRegex = /^(?:\/\/# sourceMappingURL=)?data:application\/json;(?:charset=[^;]+;)?base64,/
+const base64PrefixRegex =
+  /^(?:\/\/# sourceMappingURL=)?data:application\/json;(?:charset=[^;]+;)?base64,/
 
 export default function App() {
   const [stackTraceInputValue, setStackTraceInputValue] = useState('')

@@ -6,10 +6,7 @@
   "runArgs": ["--name", "sourcemap_tools_devcontainer", "--tmpfs", "/tmp:exec,mode=01777"],
   "customizations": {
     "vscode": {
-      "extensions": [
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode"
-      ],
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"],
       "settings": {
         "editor.rulers": [100],
         "editor.defaultFormatter": "esbenp.prettier-vscode",

@@ -1,0 +1,24 @@
+{
+  "name": "sourcemap_tools_devcontainer",
+  "image": "public.ecr.aws/docker/library/node:24",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/sm,type=bind",
+  "workspaceFolder": "/sm",
+  "runArgs": ["--name", "sourcemap_tools_devcontainer", "--tmpfs", "/tmp:exec,mode=01777"],
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"],
+      "settings": {
+        "editor.rulers": [100],
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "typescript.enablePromptUseWorkspaceTsdk": true,
+        "npm.packageManager": "npm",
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        }
+      }
+    }
+  },
+  "postCreateCommand": "cd /sm && npm ci",
+  "remoteUser": "node"
+}

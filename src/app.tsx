@@ -9,6 +9,9 @@ import { ThemeToggle } from './theme-toggle.tsx'
 import { useSourcemapsStore } from './use-sourcemaps-store.ts'
 import { setTheme, useTheme } from './use-theme.ts'
 
+const base64PrefixRegex =
+  /^(?:\/\/# sourceMappingURL=)?data:application\/json;(?:charset=[^;]+;)?base64,/
+
 export default function App() {
   const [stackTraceInputValue, setStackTraceInputValue] = useState('')
   const [sourceMapInputValue, setSourceMapInputValue] = useState('')
@@ -43,7 +46,19 @@ export default function App() {
   }
 
   async function handleSourceMapTextAreaChange(event: ChangeEvent<HTMLTextAreaElement>) {
-    const text = event.target.value
+    let text = event.target.value
+
+    if (base64PrefixRegex.test(text)) {
+      try {
+        const base64Content = text.replace(base64PrefixRegex, '')
+        const bytes = Uint8Array.from(atob(base64Content), c => c.charCodeAt(0))
+        text = new TextDecoder().decode(bytes)
+      } catch {
+        setIsSourceMapInputError(true)
+        setSourceMapInputValue(event.target.value)
+        return
+      }
+    }
 
     setSourceMapInputValue(text)
 

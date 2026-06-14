@@ -6,10 +6,9 @@ import { SourceMapConsumer } from 'source-map'
 import App from './app.tsx'
 import './index.css'
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
+// @ts-expect-error -- initialize is typed on the instance interface, not the constructor, in source-map@0.7.x types
 SourceMapConsumer.initialize({
-  'lib/mappings.wasm': 'https://unpkg.com/source-map@0.7.3/lib/mappings.wasm',
+  'lib/mappings.wasm': 'https://unpkg.com/source-map@0.7.6/lib/mappings.wasm',
 })
 
 const container = document.getElementById('root')

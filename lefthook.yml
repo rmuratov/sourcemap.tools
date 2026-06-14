@@ -1,0 +1,10 @@
+pre-commit:
+  parallel: true
+  commands:
+    build:
+      run: npm run build
+    test:
+      run: npm test
+    lint:
+      run: npx eslint --fix --max-warnings 0 "src/**/*.{ts,tsx}" && npx prettier --write .
+      stage_fixed: true

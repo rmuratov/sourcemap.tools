@@ -238,7 +238,7 @@ describe('source maps', () => {
     } as unknown as ChangeEvent<HTMLInputElement>
 
     // Trigger the change event directly
-    fireEvent.change(sourceMapFileInput, mockEvent as Parameters<typeof fireEvent.change>[1])
+    fireEvent.change(sourceMapFileInput, mockEvent)
 
     // Should not crash and no source maps should be added
     const sourcemapList = screen.queryByRole('list', { name: /sourcemaps list/i })

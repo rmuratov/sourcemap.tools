@@ -20,7 +20,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    "types": ["vitest/globals"],
+    "types": ["vitest/globals", "node"],
 
     "verbatimModuleSyntax": true
   },

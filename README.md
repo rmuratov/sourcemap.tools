@@ -19,6 +19,12 @@ Inspired by https://sourcemaps.info/, but does everything on the client and does
 2. Provide source maps by choosing files or pasting the content of the source map.
 3. See the results on the right.
 
+## Known issues
+
+**Indexed (sectioned) source maps are not supported.** Some tools (e.g. webpack with `source-map-loader`) produce source maps with a `sections` field instead of `mappings`. These will be rejected silently.
+
+If you have a real-world case where this matters, please [open an issue](https://github.com/rmuratov/sourcemap.tools/issues) and attach the source map file and a sample stack trace — that will make it straightforward to add test coverage and implement support.
+
 ## Development
 
 1. Clone the repository

@@ -29,7 +29,7 @@ describe('stack trace', () => {
     const filenamesListItems = within(filenamesList).getAllByRole('listitem')
     const fileNames = filenamesListItems.map(item => item.textContent)
 
-    expect(fileNames).toEqual(['index-d803759c.js', 'vendor-221d27ba.js'])
+    expect(fileNames).toEqual(['index-F7qoIhl0.js', 'vendor-B_FE3Fnm.js'])
   })
 
   test('shows warning if parsing failed', async () => {
@@ -75,7 +75,7 @@ describe('source maps', () => {
     const resultTextArea = screen.getByRole('textbox', { name: /original stack trace/i })
 
     await user.type(stacktraceTextarea, regular.stacktrace)
-    expect(resultTextArea).toHaveValue('')
+    expect(resultTextArea).toHaveValue(regular.reconstructed)
 
     const sourceMapFileInput = screen.getByLabelText(/choose files/i)
     const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
@@ -94,10 +94,10 @@ describe('source maps', () => {
     sourcemapTextarea.focus()
     await user.paste(regular.sourcemaps[0].content)
 
-    const sourcemapList = screen.getByRole('list', { name: /sourcemaps list/i })
+    const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
     expect(sourcemapList).toBeInTheDocument()
 
-    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('index-d803759c.js')
+    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('index-F7qoIhl0.js')
   })
 
   test('updates related lines in the result after deleting sourcemap', async () => {
@@ -134,7 +134,7 @@ describe('source maps', () => {
     const deleteButtons = await screen.findAllByRole('button', { name: 'delete' })
     await Promise.all(deleteButtons.map(btn => user.click(btn)))
 
-    await waitFor(() => expect(resultTextArea).toHaveValue(''))
+    await waitFor(() => expect(resultTextArea).toHaveValue(regular.reconstructed))
   })
 
   test('ignores empty files list', async () => {
@@ -199,7 +199,7 @@ describe('source maps', () => {
     const filenamesListItems = within(sourcemapList).getAllByRole('listitem')
     const fileNames = filenamesListItems.map(item => item.textContent)
 
-    expect(fileNames).toEqual(['index-d803759c.js.map delete', 'vendor-221d27ba.js.map delete'])
+    expect(fileNames).toEqual(['index-F7qoIhl0.js.map delete', 'vendor-B_FE3Fnm.js.map delete'])
   })
 
   test('allows opening file selector using keyboard', () => {
@@ -274,13 +274,13 @@ describe('source maps', () => {
 
     const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
 
-    const dataUrl = `data:application/json;base64,${btoa(regular.sourcemaps[0].content)}`
+    const dataUrl = `data:application/json;base64,${Buffer.from(regular.sourcemaps[0].content).toString('base64')}`
 
     sourcemapTextarea.focus()
     await user.paste(dataUrl)
 
     const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
-    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('index-d803759c.js')
+    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('index-F7qoIhl0.js')
   })
 
   test('decodes base64 data URL with charset parameter', async () => {
@@ -289,13 +289,13 @@ describe('source maps', () => {
 
     const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
 
-    const dataUrl = `data:application/json;charset=utf-8;base64,${btoa(regular.sourcemaps[0].content)}`
+    const dataUrl = `data:application/json;charset=utf-8;base64,${Buffer.from(regular.sourcemaps[0].content).toString('base64')}`
 
     sourcemapTextarea.focus()
     await user.paste(dataUrl)
 
     const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
-    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('index-d803759c.js')
+    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('index-F7qoIhl0.js')
   })
 
   test('shows warning for malformed base64 data URL', async () => {
@@ -324,7 +324,7 @@ describe('source maps', () => {
     await user.paste(regular.sourcemaps[1].content)
 
     const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
-    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('vendor-221d27ba.js')
+    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('vendor-B_FE3Fnm.js')
   })
 })
 

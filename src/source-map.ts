@@ -7,21 +7,24 @@ import type {
 
 import { SourceMapConsumer } from 'source-map'
 
-let id = 0
-
 export class SourceMap {
+  static #nextId = 0
+
   consumer: BasicSourceMapConsumer | IndexedSourceMapConsumer
   fileName?: string
   fileNameInline?: string
   id: number
+  #mappings: string
 
   constructor(
     consumer: BasicSourceMapConsumer | IndexedSourceMapConsumer,
+    mappings: string,
     fileNameInline?: string,
     fileName?: string,
   ) {
-    this.id = id++
+    this.id = SourceMap.#nextId++
     this.consumer = consumer
+    this.#mappings = mappings
     this.fileNameInline = fileNameInline
     this.fileName = fileName
   }
@@ -41,7 +44,7 @@ export class SourceMap {
     const consumer = await new SourceMapConsumer(rawSourceMap)
     const fileNameInline = parsed.file
 
-    return new SourceMap(consumer, fileNameInline, sourceMapFileName)
+    return new SourceMap(consumer, parsed.mappings, fileNameInline, sourceMapFileName)
   }
 
   static isRawSourceMap(sourceMap: RawIndexMap | RawSourceMap): sourceMap is RawSourceMap {
@@ -54,6 +57,8 @@ export class SourceMap {
   }
 
   isEqual(sourceMap: SourceMap) {
-    return this.fileNameInline === sourceMap.fileNameInline
+    return (
+      this.fileNameInline === sourceMap.fileNameInline && this.#mappings === sourceMap.#mappings
+    )
   }
 }

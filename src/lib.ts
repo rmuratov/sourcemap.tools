@@ -6,12 +6,11 @@ import type { SourceMap } from './source-map.ts'
 import type { StackTrace } from './stack-trace.ts'
 
 export function transform(sourceMaps: SourceMap[], stackTrace: null | StackTrace) {
-  const bindings = calculateBindings(sourceMaps, stackTrace)
-
-  if (!stackTrace || Object.keys(bindings).length === 0) {
+  if (!stackTrace) {
     return ''
   }
 
+  const bindings = calculateBindings(sourceMaps, stackTrace)
   const result = [stackTrace.message]
 
   const transformed = stackTrace.frames.map(stackFrame =>
@@ -51,7 +50,7 @@ function toUnifiedPosition(position: NullableMappedPosition | StackFrame): Unifi
       column: position.column,
       file: position.file,
       line: position.lineNumber,
-      method: position.methodName,
+      method: position.methodName === '<unknown>' ? null : position.methodName,
     }
   }
 

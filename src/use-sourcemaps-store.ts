@@ -6,22 +6,22 @@ export function useSourcemapsStore() {
   const [sourceMaps, setSourceMaps] = useState<SourceMap[]>([])
 
   function addSourceMaps(value: (null | SourceMap)[] | SourceMap) {
-    const newSourceMaps: SourceMap[] = []
-
-    for (const sourceMap of Array.isArray(value) ? value : [value]) {
-      if (sourceMap && !sourceMaps.some(s => s.isEqual(sourceMap))) {
-        newSourceMaps.push(sourceMap)
-      }
-    }
-
-    setSourceMaps(sourceMaps => [...sourceMaps, ...newSourceMaps])
+    const candidates = (Array.isArray(value) ? value : [value]).filter(
+      (sm): sm is SourceMap => sm !== null,
+    )
+    setSourceMaps(prev => {
+      const toAdd = candidates.filter(sm => !prev.some(s => s.isEqual(sm)))
+      return toAdd.length ? [...prev, ...toAdd] : prev
+    })
   }
 
   function deleteSourceMap(id: number) {
-    const index = sourceMaps.findIndex(sm => sm.id === id)
-    const sm = sourceMaps[index]
-    sm.consumer.destroy()
-    setSourceMaps(sourceMaps => sourceMaps.filter((_sm, i) => i !== index))
+    setSourceMaps(prev => {
+      const target = prev.find(sm => sm.id === id)
+      if (!target) return prev
+      target.consumer.destroy()
+      return prev.filter(sm => sm.id !== id)
+    })
   }
 
   return { addSourceMaps, deleteSourceMap, sourceMaps }

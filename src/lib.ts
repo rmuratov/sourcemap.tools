@@ -102,7 +102,7 @@ function calculateBindings(sourceMaps: SourceMap[], stackTrace: null | StackTrac
 }
 
 function extractFileNameFromPath(path: string): string {
-  const parts = path.split('/')
+  const parts = path.split(/[/\\]/)
   return parts[parts.length - 1]
 }
 

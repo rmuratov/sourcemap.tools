@@ -5,6 +5,7 @@ import { SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { describe, expect, test, vi } from 'vitest'
 
 import App from '../app.tsx'
+import { SourceMap } from '../source-map.ts'
 import { regular } from './fixtures'
 import { mockPrefersColorScheme } from './setup.ts'
 
@@ -333,16 +334,16 @@ describe('source maps', () => {
   })
 })
 
-describe('source map lifecycle', () => {
-  // destroy() lives on the prototype of the concrete consumer class, which the
-  // library does not export, so grab it from a throwaway instance.
-  async function spyOnConsumerDestroy() {
-    const consumer = await new SourceMapConsumer(regular.sourcemaps[0].content)
-    const prototype = Object.getPrototypeOf(consumer) as { destroy: () => void }
-    consumer.destroy()
-    return vi.spyOn(prototype, 'destroy')
-  }
+// destroy() lives on the prototype of the concrete consumer class, which the
+// library does not export, so grab it from a throwaway instance.
+async function spyOnConsumerDestroy() {
+  const consumer = await new SourceMapConsumer(regular.sourcemaps[0].content)
+  const prototype = Object.getPrototypeOf(consumer) as { destroy: () => void }
+  consumer.destroy()
+  return vi.spyOn(prototype, 'destroy')
+}
 
+describe('source map lifecycle', () => {
   test('destroys the consumer of a rejected duplicate source map', async () => {
     const destroySpy = await spyOnConsumerDestroy()
 
@@ -408,6 +409,86 @@ describe('source map lifecycle', () => {
     expect(destroySpy).toHaveBeenCalledOnce()
 
     destroySpy.mockRestore()
+  })
+})
+
+describe('source map input race', () => {
+  // Delays the first SourceMap.create call so that a subsequent input event
+  // can finish parsing before the first one does.
+  function delayFirstSourceMapCreate(delayMs: number) {
+    const originalCreate = SourceMap.create.bind(SourceMap)
+    const createSpy = vi.spyOn(SourceMap, 'create')
+
+    createSpy.mockImplementation(originalCreate)
+    createSpy.mockImplementationOnce(async (text, fileName) => {
+      await new Promise(resolve => setTimeout(resolve, delayMs))
+      return originalCreate(text, fileName)
+    })
+
+    return createSpy
+  }
+
+  test('discards a stale successful parse instead of wiping newer input', async () => {
+    const createSpy = delayFirstSourceMapCreate(100)
+    const destroySpy = await spyOnConsumerDestroy()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+
+    // Slow parse of a valid source map...
+    sourcemapTextarea.focus()
+    await user.paste(regular.sourcemaps[0].content)
+
+    // ...superseded by newer input before it finishes.
+    await user.clear(sourcemapTextarea)
+    await user.paste('lorem ipsum')
+
+    expect(sourcemapTextarea).toHaveValue('lorem ipsum')
+
+    // Let the delayed parse resolve.
+    await new Promise(resolve => setTimeout(resolve, 150))
+
+    // The stale result must not clear the textarea or add the source map,
+    // and its consumer must be destroyed.
+    expect(sourcemapTextarea).toHaveValue('lorem ipsum')
+    expect(screen.getByText(/provided text is not a source map/i)).toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: /sourcemaps list/i })).not.toBeInTheDocument()
+    expect(destroySpy).toHaveBeenCalledOnce()
+
+    destroySpy.mockRestore()
+    createSpy.mockRestore()
+  })
+
+  test('discards a stale failed parse instead of overriding a newer success', async () => {
+    const createSpy = delayFirstSourceMapCreate(100)
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+
+    // Slow parse of text that is not a source map...
+    sourcemapTextarea.focus()
+    await user.paste('lorem ipsum')
+
+    // ...superseded by a valid source map.
+    await user.clear(sourcemapTextarea)
+    await user.paste(regular.sourcemaps[0].content)
+
+    const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(sourcemapTextarea).toHaveValue('')
+
+    // Let the delayed parse resolve.
+    await new Promise(resolve => setTimeout(resolve, 150))
+
+    // The stale failure must not show the error for the accepted source map.
+    expect(sourcemapList).toBeInTheDocument()
+    expect(sourcemapTextarea).toHaveValue('')
+    expect(screen.queryByText(/provided text is not a source map/i)).not.toBeInTheDocument()
+
+    createSpy.mockRestore()
   })
 })
 

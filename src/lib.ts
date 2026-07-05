@@ -25,7 +25,7 @@ export function transform(sourceMaps: SourceMap[], stackTrace: null | StackTrace
 function tryGetOriginalPosition(
   stackFrame: StackFrame,
   bindings: Record<string, SourceMap>,
-): null | NullableMappedPosition {
+): null | OriginalPosition {
   const { column, file, line } = toUnifiedPosition(stackFrame)
 
   if (!file || !bindings[file] || line == null || line < 1 || column == null) {
@@ -38,7 +38,21 @@ function tryGetOriginalPosition(
     line,
   })
 
-  return result.source == null ? null : result
+  return isResolvedPosition(result) ? result : null
+}
+
+interface OriginalPosition {
+  column: number
+  line: number
+  name: null | string
+  source: string
+}
+
+// A found mapping always carries line and column along with the source.
+function isResolvedPosition(
+  position: NullableMappedPosition,
+): position is NullableMappedPosition & OriginalPosition {
+  return position.source != null
 }
 
 function generateStackTraceLine(position: UnifiedPosition) {
@@ -46,7 +60,7 @@ function generateStackTraceLine(position: UnifiedPosition) {
   return `  at${method ? ` ${method}` : ''} (${file}:${line}:${column})`
 }
 
-function toUnifiedPosition(position: NullableMappedPosition | StackFrame): UnifiedPosition {
+function toUnifiedPosition(position: OriginalPosition | StackFrame): UnifiedPosition {
   if (isStackFrame(position)) {
     return {
       column: position.column,
@@ -58,14 +72,14 @@ function toUnifiedPosition(position: NullableMappedPosition | StackFrame): Unifi
 
   return {
     // The source-map library returns 0-based columns, stack traces use 1-based.
-    column: position.column == null ? null : position.column + 1,
+    column: position.column + 1,
     file: position.source,
     line: position.line,
     method: position.name,
   }
 }
 
-function isStackFrame(position: NullableMappedPosition | StackFrame): position is StackFrame {
+function isStackFrame(position: OriginalPosition | StackFrame): position is StackFrame {
   return 'lineNumber' in position
 }
 

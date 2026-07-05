@@ -21,6 +21,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json'],
       include: ['src/**/*.{ts,tsx}'],
+      thresholds: { 100: true },
     },
   },
 })

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { type ChangeEvent } from 'react'
-import { SourceMapGenerator } from 'source-map'
+import { type ChangeEvent, StrictMode } from 'react'
+import { SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { describe, expect, test, vi } from 'vitest'
 
 import App from '../app.tsx'
@@ -326,6 +326,84 @@ describe('source maps', () => {
 
     const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
     expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('vendor-B_FE3Fnm.js')
+  })
+})
+
+describe('source map lifecycle', () => {
+  // destroy() lives on the prototype of the concrete consumer class, which the
+  // library does not export, so grab it from a throwaway instance.
+  async function spyOnConsumerDestroy() {
+    const consumer = await new SourceMapConsumer(regular.sourcemaps[0].content)
+    const prototype = Object.getPrototypeOf(consumer) as { destroy: () => void }
+    consumer.destroy()
+    return vi.spyOn(prototype, 'destroy')
+  }
+
+  test('destroys the consumer of a rejected duplicate source map', async () => {
+    const destroySpy = await spyOnConsumerDestroy()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    const makeFile = () => new File([regular.sourcemaps[0].content], regular.sourcemaps[0].fileName)
+
+    await user.upload(sourceMapFileInput, makeFile())
+    await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(destroySpy).not.toHaveBeenCalled()
+
+    await user.upload(sourceMapFileInput, makeFile())
+    await waitFor(() => expect(destroySpy).toHaveBeenCalledOnce())
+
+    const sourcemapList = screen.getByRole('list', { name: /sourcemaps list/i })
+    expect(within(sourcemapList).getAllByRole('listitem')).toHaveLength(1)
+
+    destroySpy.mockRestore()
+  })
+
+  test('adds a source map only once when identical files are selected together', async () => {
+    const destroySpy = await spyOnConsumerDestroy()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    const files = [
+      new File([regular.sourcemaps[0].content], 'copy-one.js.map'),
+      new File([regular.sourcemaps[0].content], 'copy-two.js.map'),
+    ]
+
+    await user.upload(sourceMapFileInput, files)
+
+    const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(within(sourcemapList).getAllByRole('listitem')).toHaveLength(1)
+    expect(destroySpy).toHaveBeenCalledOnce()
+
+    destroySpy.mockRestore()
+  })
+
+  test('destroys the consumer exactly once when deleting under StrictMode', async () => {
+    const destroySpy = await spyOnConsumerDestroy()
+
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    )
+    const user = userEvent.setup()
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    const file = new File([regular.sourcemaps[0].content], regular.sourcemaps[0].fileName)
+    await user.upload(sourceMapFileInput, file)
+
+    const deleteButton = await screen.findByRole('button', { name: 'delete' })
+    await user.click(deleteButton)
+
+    const sourcemapList = screen.queryByRole('list', { name: /sourcemaps list/i })
+    expect(sourcemapList).not.toBeInTheDocument()
+    expect(destroySpy).toHaveBeenCalledOnce()
+
+    destroySpy.mockRestore()
   })
 })
 

@@ -2,13 +2,14 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { SourceMapConsumer } from 'source-map'
+import mappingsWasmUrl from 'source-map/lib/mappings.wasm?url'
 
 import App from './app.tsx'
 import './index.css'
 
 // @ts-expect-error -- initialize is typed on the instance interface, not the constructor, in source-map@0.7.x types
 SourceMapConsumer.initialize({
-  'lib/mappings.wasm': 'https://unpkg.com/source-map@0.7.6/lib/mappings.wasm',
+  'lib/mappings.wasm': mappingsWasmUrl,
 })
 
 const container = document.getElementById('root')

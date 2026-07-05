@@ -1,5 +1,5 @@
 import cx from 'clsx'
-import { type ChangeEvent, useState } from 'react'
+import { type ChangeEvent, useRef, useState } from 'react'
 
 import { GitHubLogo } from './git-hub-logo.tsx'
 import { transform } from './lib.ts'
@@ -19,6 +19,8 @@ export default function App() {
 
   const [isSourceMapInputError, setIsSourceMapInputError] = useState(false)
   const [isSourceMapFileInputError, setIsSourceMapFileInputError] = useState(false)
+
+  const latestSourceMapRequestRef = useRef(0)
 
   const theme = useTheme()
 
@@ -46,6 +48,8 @@ export default function App() {
   }
 
   async function handleSourceMapTextAreaChange(event: ChangeEvent<HTMLTextAreaElement>) {
+    const requestId = ++latestSourceMapRequestRef.current
+
     let text = event.target.value
 
     if (base64PrefixRegex.test(text)) {
@@ -63,6 +67,12 @@ export default function App() {
     setSourceMapInputValue(text)
 
     const sourceMap = await SourceMap.create(text)
+
+    // A newer input event superseded this one while the source map was parsing.
+    if (requestId !== latestSourceMapRequestRef.current) {
+      sourceMap?.consumer.destroy()
+      return
+    }
 
     if (!sourceMap) {
       setIsSourceMapInputError(Boolean(text) && true)

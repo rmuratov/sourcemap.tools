@@ -28,13 +28,12 @@ export function useSourcemapsStore() {
   }
 
   function deleteSourceMap(id: number) {
-    const target = sourceMaps.find(sm => sm.id === id)
-
-    if (!target) {
-      return
+    for (const sourceMap of sourceMaps) {
+      if (sourceMap.id === id) {
+        sourceMap.consumer.destroy()
+      }
     }
 
-    target.consumer.destroy()
     setSourceMaps(prev => prev.filter(sm => sm.id !== id))
   }
 

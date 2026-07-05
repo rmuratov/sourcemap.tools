@@ -219,6 +219,10 @@ describe('source maps', () => {
     // Mock the click method to test that it gets called by the keydown handler
     const clickSpy = vi.spyOn(fileUploadButton, 'click')
 
+    // Other keys must not open the file selector
+    fireEvent.keyDown(fileUploadButton, { code: 'KeyA' })
+    expect(clickSpy).not.toHaveBeenCalled()
+
     // Fire the keydown event with Enter
     fireEvent.keyDown(fileUploadButton, { code: 'Enter' })
 

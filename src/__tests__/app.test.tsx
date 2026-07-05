@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { type ChangeEvent } from 'react'
+import { SourceMapGenerator } from 'source-map'
 import { describe, expect, test, vi } from 'vitest'
 
 import App from '../app.tsx'
@@ -325,6 +326,94 @@ describe('source maps', () => {
 
     const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
     expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('vendor-B_FE3Fnm.js')
+  })
+})
+
+describe('column numbers', () => {
+  // Generated line 1 has mappings at 0-based columns 0, 10, and 11 which lead
+  // to different original lines, so an off-by-one in the column conversion
+  // resolves to a wrong original position.
+  function createCraftedSourceMap() {
+    const generator = new SourceMapGenerator({ file: 'crafted.min.js' })
+
+    generator.addMapping({
+      generated: { column: 0, line: 1 },
+      name: 'start',
+      original: { column: 0, line: 1 },
+      source: 'original.ts',
+    })
+    generator.addMapping({
+      generated: { column: 10, line: 1 },
+      name: 'first',
+      original: { column: 2, line: 5 },
+      source: 'original.ts',
+    })
+    generator.addMapping({
+      generated: { column: 11, line: 1 },
+      name: 'second',
+      original: { column: 4, line: 9 },
+      source: 'original.ts',
+    })
+
+    return generator.toString()
+  }
+
+  test('converts 1-based stack trace columns to the 0-based source map convention and back', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    const resultTextArea = screen.getByRole('textbox', { name: /original stack trace/i })
+
+    // 1-based column 11 is 0-based column 10, so it must resolve to `first`,
+    // not to the mapping at 0-based column 11 (`second`).
+    await user.type(stacktraceTextarea, 'Error: boom\n  at crafted.min.js:1:11')
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste(createCraftedSourceMap())
+
+    await waitFor(() =>
+      expect(resultTextArea).toHaveValue('Error: boom\n  at first (original.ts:5:3)'),
+    )
+  })
+
+  test('transforms frames with column 0', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    const resultTextArea = screen.getByRole('textbox', { name: /original stack trace/i })
+
+    await user.type(stacktraceTextarea, 'Error: boom\n  at crafted.min.js:1:0')
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste(createCraftedSourceMap())
+
+    await waitFor(() =>
+      expect(resultTextArea).toHaveValue('Error: boom\n  at start (original.ts:1:1)'),
+    )
+  })
+
+  test('keeps the original frame when the position is not in the source map', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    const resultTextArea = screen.getByRole('textbox', { name: /original stack trace/i })
+
+    // Line 2 has no mappings, so the frame must stay as is instead of
+    // becoming `null:null:null`.
+    await user.type(stacktraceTextarea, 'Error: boom\n  at crafted.min.js:2:1')
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste(createCraftedSourceMap())
+
+    await waitFor(() =>
+      expect(resultTextArea).toHaveValue('Error: boom\n  at (crafted.min.js:2:1)'),
+    )
   })
 })
 

@@ -26,17 +26,19 @@ function tryGetOriginalPosition(
   stackFrame: StackFrame,
   bindings: Record<string, SourceMap>,
 ): null | NullableMappedPosition {
-  let result: null | NullableMappedPosition = null
-
   const { column, file, line } = toUnifiedPosition(stackFrame)
 
-  if (!file || !bindings[file] || !line || !column) {
+  if (!file || !bindings[file] || line == null || line < 1 || column == null) {
     return null
   }
 
-  result = bindings[file].consumer.originalPositionFor({ column, line })
+  // Stack traces use 1-based columns, the source-map library expects 0-based.
+  const result = bindings[file].consumer.originalPositionFor({
+    column: Math.max(column - 1, 0),
+    line,
+  })
 
-  return result
+  return result.source == null ? null : result
 }
 
 function generateStackTraceLine(position: UnifiedPosition) {
@@ -55,7 +57,8 @@ function toUnifiedPosition(position: NullableMappedPosition | StackFrame): Unifi
   }
 
   return {
-    column: position.column,
+    // The source-map library returns 0-based columns, stack traces use 1-based.
+    column: position.column == null ? null : position.column + 1,
     file: position.source,
     line: position.line,
     method: position.name,

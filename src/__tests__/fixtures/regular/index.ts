@@ -5,12 +5,12 @@ export const regular = {
   afterDeleteIndex: `Uncaught Error: Error!
   at e.throwError (index-F7qoIhl0.js:2:1251)
   at onClick (index-F7qoIhl0.js:3:5483)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12317:12)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12867:4)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:1498:35)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12455:2)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:15306:6)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:15274:6)`,
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12317:13)
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12867:5)
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:1498:36)
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12455:3)
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:15306:7)
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:15274:7)`,
   reconstructed: `Uncaught Error: Error!
   at e.throwError (index-F7qoIhl0.js:2:1251)
   at onClick (index-F7qoIhl0.js:3:5483)
@@ -21,14 +21,14 @@ export const regular = {
   at up (vendor-B_FE3Fnm.js:9:28431)
   at cp (vendor-B_FE3Fnm.js:9:28253)`,
   result: `Uncaught Error: Error!
-  at (../../src/source-map.ts:60:14)
-  at (../../src/app.tsx:164:66)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12317:12)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12867:4)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:1498:35)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12455:2)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:15306:6)
-  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:15274:6)`,
+  at (../../src/source-map.ts:60:15)
+  at (../../src/app.tsx:164:67)
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12317:13)
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12867:5)
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:1498:36)
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12455:3)
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:15306:7)
+  at (../../node_modules/react-dom/cjs/react-dom-client.production.js:15274:7)`,
   sourcemaps: ['index-F7qoIhl0.js.map', 'vendor-B_FE3Fnm.js.map'].map(fileName => ({
     content: fs.readFileSync(path.resolve(__dirname, 'sourcemaps', fileName)).toString(),
     fileName,

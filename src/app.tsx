@@ -1,5 +1,5 @@
 import cx from 'clsx'
-import { type ChangeEvent, useRef, useState } from 'react'
+import { type ChangeEvent, useMemo, useRef, useState } from 'react'
 
 import { GitHubLogo } from './git-hub-logo.tsx'
 import { transform } from './lib.ts'
@@ -24,10 +24,15 @@ export default function App() {
 
   const theme = useTheme()
 
-  const stackTrace = StackTrace.create(stackTraceInputValue)
+  // Parsing and transformation walk every frame of the stack trace, so avoid
+  // redoing them on renders where neither the input nor the source maps changed.
+  const stackTrace = useMemo(() => StackTrace.create(stackTraceInputValue), [stackTraceInputValue])
   const isParseError = Boolean(stackTraceInputValue.trim()) && !stackTrace
 
-  const transformedStackTrace = transform(sourceMaps, stackTrace)
+  const transformedStackTrace = useMemo(
+    () => transform(sourceMaps, stackTrace),
+    [sourceMaps, stackTrace],
+  )
 
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     setIsSourceMapFileInputError(false)

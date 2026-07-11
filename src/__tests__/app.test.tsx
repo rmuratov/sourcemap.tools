@@ -6,6 +6,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import App from '../app.tsx'
 import { SourceMap } from '../source-map.ts'
+import { StackTrace } from '../stack-trace.ts'
 import { regular } from './fixtures'
 import { mockPrefersColorScheme } from './setup.ts'
 
@@ -577,6 +578,77 @@ describe('column numbers', () => {
     await waitFor(() =>
       expect(resultTextArea).toHaveValue('Error: boom\n  at (crafted.min.js:2:1)'),
     )
+  })
+})
+
+describe('memoization', () => {
+  // originalPositionFor() lives on the prototype of the concrete consumer
+  // class, which the library does not export, so grab it from a throwaway
+  // instance. Every transformation calls it for each mapped stack frame.
+  async function spyOnConsumerOriginalPositionFor() {
+    const consumer = await new SourceMapConsumer(regular.sourcemaps[0].content)
+    const prototype = Object.getPrototypeOf(consumer) as {
+      originalPositionFor: (...args: unknown[]) => unknown
+    }
+    consumer.destroy()
+    return vi.spyOn(prototype, 'originalPositionFor')
+  }
+
+  test('does not re-parse the stack trace on unrelated re-renders', async () => {
+    const createSpy = vi.spyOn(StackTrace, 'create')
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    await user.type(stacktraceTextarea, regular.stacktrace)
+    expect(createSpy).toHaveBeenCalled()
+
+    createSpy.mockClear()
+
+    // Typing into the source map textarea re-renders the app but must not
+    // re-parse the unchanged stack trace.
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste('lorem ipsum')
+    await screen.findByText(/provided text is not a source map/i)
+
+    expect(createSpy).not.toHaveBeenCalled()
+
+    createSpy.mockRestore()
+  })
+
+  test('does not re-run the transformation on unrelated re-renders', async () => {
+    const positionSpy = await spyOnConsumerOriginalPositionFor()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    const resultTextArea = screen.getByRole('textbox', { name: /original stack trace/i })
+
+    await user.type(stacktraceTextarea, regular.stacktrace)
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
+    await user.upload(sourceMapFileInput, files)
+
+    await waitFor(() => expect(resultTextArea).toHaveValue(regular.result))
+    expect(positionSpy).toHaveBeenCalled()
+
+    positionSpy.mockClear()
+
+    // Typing into the source map textarea re-renders the app but must not
+    // re-transform the unchanged stack trace.
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste('lorem ipsum')
+    await screen.findByText(/provided text is not a source map/i)
+
+    expect(positionSpy).not.toHaveBeenCalled()
+    expect(resultTextArea).toHaveValue(regular.result)
+
+    positionSpy.mockRestore()
   })
 })
 

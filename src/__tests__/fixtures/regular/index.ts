@@ -11,15 +11,6 @@ export const regular = {
   at (../../node_modules/react-dom/cjs/react-dom-client.production.js:12455:3)
   at (../../node_modules/react-dom/cjs/react-dom-client.production.js:15306:7)
   at (../../node_modules/react-dom/cjs/react-dom-client.production.js:15274:7)`,
-  reconstructed: `Uncaught Error: Error!
-  at e.throwError (index-F7qoIhl0.js:2:1251)
-  at onClick (index-F7qoIhl0.js:3:5483)
-  at yd (vendor-B_FE3Fnm.js:8:125915)
-  at (vendor-B_FE3Fnm.js:8:130908)
-  at gn (vendor-B_FE3Fnm.js:8:15080)
-  at wd (vendor-B_FE3Fnm.js:8:127142)
-  at up (vendor-B_FE3Fnm.js:9:28431)
-  at cp (vendor-B_FE3Fnm.js:9:28253)`,
   result: `Uncaught Error: Error!
   at (../../src/source-map.ts:60:15)
   at (../../src/app.tsx:164:67)

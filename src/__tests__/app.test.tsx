@@ -78,7 +78,8 @@ describe('source maps', () => {
     const resultTextArea = screen.getByRole('textbox', { name: /original stack trace/i })
 
     await user.type(stacktraceTextarea, regular.stacktrace)
-    expect(resultTextArea).toHaveValue(regular.reconstructed)
+    // Without matching source maps the stack trace passes through verbatim.
+    expect(resultTextArea).toHaveValue(regular.stacktrace)
 
     const sourceMapFileInput = screen.getByLabelText(/choose files/i)
     const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
@@ -137,7 +138,7 @@ describe('source maps', () => {
     const deleteButtons = await screen.findAllByRole('button', { name: 'delete' })
     await Promise.all(deleteButtons.map(btn => user.click(btn)))
 
-    await waitFor(() => expect(resultTextArea).toHaveValue(regular.reconstructed))
+    await waitFor(() => expect(resultTextArea).toHaveValue(regular.stacktrace))
   })
 
   test('ignores empty files list', async () => {
@@ -493,35 +494,35 @@ describe('source map input race', () => {
   })
 })
 
+// Generated line 1 has mappings at 0-based columns 0, 10, and 11 which lead
+// to different original lines, so an off-by-one in the column conversion
+// resolves to a wrong original position.
+function createCraftedSourceMap() {
+  const generator = new SourceMapGenerator({ file: 'crafted.min.js' })
+
+  generator.addMapping({
+    generated: { column: 0, line: 1 },
+    name: 'start',
+    original: { column: 0, line: 1 },
+    source: 'original.ts',
+  })
+  generator.addMapping({
+    generated: { column: 10, line: 1 },
+    name: 'first',
+    original: { column: 2, line: 5 },
+    source: 'original.ts',
+  })
+  generator.addMapping({
+    generated: { column: 11, line: 1 },
+    name: 'second',
+    original: { column: 4, line: 9 },
+    source: 'original.ts',
+  })
+
+  return generator.toString()
+}
+
 describe('column numbers', () => {
-  // Generated line 1 has mappings at 0-based columns 0, 10, and 11 which lead
-  // to different original lines, so an off-by-one in the column conversion
-  // resolves to a wrong original position.
-  function createCraftedSourceMap() {
-    const generator = new SourceMapGenerator({ file: 'crafted.min.js' })
-
-    generator.addMapping({
-      generated: { column: 0, line: 1 },
-      name: 'start',
-      original: { column: 0, line: 1 },
-      source: 'original.ts',
-    })
-    generator.addMapping({
-      generated: { column: 10, line: 1 },
-      name: 'first',
-      original: { column: 2, line: 5 },
-      source: 'original.ts',
-    })
-    generator.addMapping({
-      generated: { column: 11, line: 1 },
-      name: 'second',
-      original: { column: 4, line: 9 },
-      source: 'original.ts',
-    })
-
-    return generator.toString()
-  }
-
   test('converts 1-based stack trace columns to the 0-based source map convention and back', async () => {
     render(<App />)
     const user = userEvent.setup()
@@ -567,16 +568,64 @@ describe('column numbers', () => {
     const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
     const resultTextArea = screen.getByRole('textbox', { name: /original stack trace/i })
 
-    // Line 2 has no mappings, so the frame must stay as is instead of
-    // becoming `null:null:null`.
+    // Line 2 has no mappings, so the raw frame line must stay as is instead
+    // of becoming `null:null:null`.
     await user.type(stacktraceTextarea, 'Error: boom\n  at crafted.min.js:2:1')
 
     const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
     sourcemapTextarea.focus()
     await user.paste(createCraftedSourceMap())
 
+    await waitFor(() => expect(resultTextArea).toHaveValue('Error: boom\n  at crafted.min.js:2:1'))
+  })
+})
+
+describe('unparsed lines', () => {
+  test('preserves multi-line error messages', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    const resultTextArea = screen.getByRole('textbox', { name: /original stack trace/i })
+
+    await user.type(
+      stacktraceTextarea,
+      'Error: boom\nsecond line of the message\n  at crafted.min.js:1:11',
+    )
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste(createCraftedSourceMap())
+
     await waitFor(() =>
-      expect(resultTextArea).toHaveValue('Error: boom\n  at (crafted.min.js:2:1)'),
+      expect(resultTextArea).toHaveValue(
+        'Error: boom\nsecond line of the message\n  at first (original.ts:5:3)',
+      ),
+    )
+  })
+
+  test('keeps unparsed lines in their original position', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    const resultTextArea = screen.getByRole('textbox', { name: /original stack trace/i })
+
+    // The async marker and the cause chain are not recognized by the parser
+    // and must pass through in place, between the mapped frames.
+    await user.type(
+      stacktraceTextarea,
+      'Error: outer\n  at crafted.min.js:1:11\n  at async run\nCaused by: Error: inner\n  at crafted.min.js:1:1',
+    )
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste(createCraftedSourceMap())
+
+    await waitFor(() =>
+      expect(resultTextArea).toHaveValue(
+        'Error: outer\n  at first (original.ts:5:3)\n  at async run\nCaused by: Error: inner\n  at start (original.ts:1:1)',
+      ),
     )
   })
 })

@@ -11,15 +11,15 @@ export function transform(sourceMaps: SourceMap[], stackTrace: null | StackTrace
   }
 
   const bindings = calculateBindings(sourceMaps, stackTrace)
-  const result = [stackTrace.message]
 
-  const transformed = stackTrace.frames.map(stackFrame =>
-    generateStackTraceLine(
-      toUnifiedPosition(tryGetOriginalPosition(stackFrame, bindings) ?? stackFrame),
-    ),
-  )
-
-  return result.concat(transformed).join('\n')
+  // Only replace lines whose frames were successfully mapped; everything else
+  // (error messages, unparsed lines, unmapped frames) keeps its raw text.
+  return stackTrace.lines
+    .map(({ frame, raw }) => {
+      const original = frame && tryGetOriginalPosition(frame, bindings)
+      return original ? generateStackTraceLine(toUnifiedPosition(original)) : raw
+    })
+    .join('\n')
 }
 
 function tryGetOriginalPosition(

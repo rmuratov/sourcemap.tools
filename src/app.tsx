@@ -69,8 +69,8 @@ export default function App() {
       }
     }
 
-    setSourceMapInputValue(text)
-
+    // The input state is only updated after parsing: rendering a large pasted
+    // source map into the controlled textarea for one frame causes jank.
     const sourceMap = await SourceMap.create(text)
 
     // A newer input event superseded this one while the source map was parsing.
@@ -80,7 +80,8 @@ export default function App() {
     }
 
     if (!sourceMap) {
-      setIsSourceMapInputError(Boolean(text) && true)
+      setSourceMapInputValue(text)
+      setIsSourceMapInputError(Boolean(text))
       return
     }
 
@@ -198,7 +199,7 @@ export default function App() {
                   >
                     Choose files
                     <input
-                      accept=".map,.txt"
+                      accept=".map,.txt,.json"
                       aria-labelledby="file-upload-button"
                       className="file-input file-input-bordered"
                       hidden

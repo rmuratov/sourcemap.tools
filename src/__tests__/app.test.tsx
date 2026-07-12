@@ -329,6 +329,58 @@ describe('source maps', () => {
     expect(sourcemapTextarea).toHaveValue('data:application/json;base64,!!!not-valid-base64!!!')
   })
 
+  test('accepts .json files in the file picker', () => {
+    render(<App />)
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    expect(sourceMapFileInput).toHaveAttribute('accept', '.map,.txt,.json')
+  })
+
+  test('does not render the pasted text into the textarea while it is parsing', async () => {
+    const createSpy = delayFirstSourceMapCreate(100)
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+
+    sourcemapTextarea.focus()
+    await user.paste(regular.sourcemaps[0].content)
+
+    // An unrelated re-render while the map is parsing syncs the controlled
+    // textarea with its state, which must not hold the pasted text.
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    await user.type(stacktraceTextarea, 'x')
+    expect(sourcemapTextarea).toHaveValue('')
+
+    // The delayed parse must still add the source map.
+    await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(sourcemapTextarea).toHaveValue('')
+
+    createSpy.mockRestore()
+  })
+
+  test('clears the textarea when the pasted source map is a rejected duplicate', async () => {
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+
+    sourcemapTextarea.focus()
+    await user.paste(regular.sourcemaps[0].content)
+
+    const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(sourcemapTextarea).toHaveValue('')
+
+    // A duplicate does not change any state, so React's controlled-value
+    // restoration is the only thing keeping the textarea empty.
+    sourcemapTextarea.focus()
+    await user.paste(regular.sourcemaps[0].content)
+
+    await waitFor(() => expect(sourcemapTextarea).toHaveValue(''))
+    expect(within(sourcemapList).getAllByRole('listitem')).toHaveLength(1)
+  })
+
   test('treats plain source map text as non-base64', async () => {
     render(<App />)
     const user = userEvent.setup()
@@ -421,22 +473,22 @@ describe('source map lifecycle', () => {
   })
 })
 
+// Delays the first SourceMap.create call so that a subsequent input event
+// can finish parsing before the first one does.
+function delayFirstSourceMapCreate(delayMs: number) {
+  const originalCreate = SourceMap.create.bind(SourceMap)
+  const createSpy = vi.spyOn(SourceMap, 'create')
+
+  createSpy.mockImplementation(originalCreate)
+  createSpy.mockImplementationOnce(async (text, fileName) => {
+    await new Promise(resolve => setTimeout(resolve, delayMs))
+    return originalCreate(text, fileName)
+  })
+
+  return createSpy
+}
+
 describe('source map input race', () => {
-  // Delays the first SourceMap.create call so that a subsequent input event
-  // can finish parsing before the first one does.
-  function delayFirstSourceMapCreate(delayMs: number) {
-    const originalCreate = SourceMap.create.bind(SourceMap)
-    const createSpy = vi.spyOn(SourceMap, 'create')
-
-    createSpy.mockImplementation(originalCreate)
-    createSpy.mockImplementationOnce(async (text, fileName) => {
-      await new Promise(resolve => setTimeout(resolve, delayMs))
-      return originalCreate(text, fileName)
-    })
-
-    return createSpy
-  }
-
   test('discards a stale successful parse instead of wiping newer input', async () => {
     const createSpy = delayFirstSourceMapCreate(100)
     const destroySpy = await spyOnConsumerDestroy()

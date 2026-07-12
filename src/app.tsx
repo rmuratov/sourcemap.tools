@@ -185,7 +185,11 @@ export default function App() {
                     htmlFor="sourcemap-file-input"
                     id="file-upload-button"
                     onKeyDown={event => {
-                      if (event.code === 'Enter') {
+                      // Buttons activate on Enter and Space; `key` (unlike
+                      // `code`) also matches NumpadEnter.
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        // Space must not scroll the page.
+                        event.preventDefault()
                         event.currentTarget.click()
                       }
                     }}

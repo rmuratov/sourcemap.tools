@@ -223,14 +223,21 @@ describe('source maps', () => {
     const clickSpy = vi.spyOn(fileUploadButton, 'click')
 
     // Other keys must not open the file selector
-    fireEvent.keyDown(fileUploadButton, { code: 'KeyA' })
+    fireEvent.keyDown(fileUploadButton, { code: 'KeyA', key: 'a' })
     expect(clickSpy).not.toHaveBeenCalled()
 
-    // Fire the keydown event with Enter
-    fireEvent.keyDown(fileUploadButton, { code: 'Enter' })
+    // Buttons activate on Enter, NumpadEnter, and Space
+    fireEvent.keyDown(fileUploadButton, { code: 'Enter', key: 'Enter' })
+    expect(clickSpy).toHaveBeenCalledTimes(1)
 
-    // Verify that the keydown handler called click() on the current target
-    expect(clickSpy).toHaveBeenCalledOnce()
+    fireEvent.keyDown(fileUploadButton, { code: 'NumpadEnter', key: 'Enter' })
+    expect(clickSpy).toHaveBeenCalledTimes(2)
+
+    // Space must activate the button and not scroll the page,
+    // so the default must be prevented.
+    const spaceNotPrevented = fireEvent.keyDown(fileUploadButton, { code: 'Space', key: ' ' })
+    expect(clickSpy).toHaveBeenCalledTimes(3)
+    expect(spaceNotPrevented).toBe(false)
 
     clickSpy.mockRestore()
   })

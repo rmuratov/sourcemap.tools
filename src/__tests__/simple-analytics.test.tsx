@@ -1,17 +1,34 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 
 import { initSimpleAnalytics } from '../analytics/simple-analytics.ts'
 import App from '../app.tsx'
 import { regular } from './fixtures'
+
+const subscriptions: (() => void)[] = []
+
+// Runs even when an assertion fails, so a leaked subscription from one test
+// cannot reappear as a failure in the next one. Only sa_event is reset here:
+// unstubbing every global would also drop the matchMedia stub the shared setup
+// installs.
+afterEach(() => {
+  subscriptions.splice(0).forEach(unsubscribe => unsubscribe())
+  vi.stubGlobal('sa_event', undefined)
+})
+
+function startForwarding() {
+  const unsubscribe = initSimpleAnalytics()
+  subscriptions.push(unsubscribe)
+  return unsubscribe
+}
 
 describe('simple analytics', () => {
   test('reports app events to sa_event', async () => {
     const saEvent = vi.fn<(name: string) => void>()
     vi.stubGlobal('sa_event', saEvent)
 
-    const stop = initSimpleAnalytics()
+    startForwarding()
 
     render(<App />)
     const user = userEvent.setup()
@@ -33,18 +50,13 @@ describe('simple analytics', () => {
       'sourcemap_added_file',
       'stacktrace_transformed',
     ])
-
-    stop()
-    // Only sa_event may be reset here: unstubbing every global would also drop
-    // the matchMedia stub the shared setup installs.
-    vi.stubGlobal('sa_event', undefined)
   })
 
   test('stops reporting after the subscription is removed', async () => {
     const saEvent = vi.fn<(name: string) => void>()
     vi.stubGlobal('sa_event', saEvent)
 
-    const stop = initSimpleAnalytics()
+    const stop = startForwarding()
     stop()
 
     render(<App />)
@@ -54,14 +66,10 @@ describe('simple analytics', () => {
     await user.type(stacktraceTextarea, regular.stacktrace)
 
     expect(saEvent).not.toHaveBeenCalled()
-
-    // Only sa_event may be reset here: unstubbing every global would also drop
-    // the matchMedia stub the shared setup installs.
-    vi.stubGlobal('sa_event', undefined)
   })
 
   test('does nothing when the Simple Analytics script is unavailable', async () => {
-    const stop = initSimpleAnalytics()
+    startForwarding()
 
     render(<App />)
     const user = userEvent.setup()
@@ -71,7 +79,5 @@ describe('simple analytics', () => {
     // A blocked or not yet loaded script leaves sa_event undefined, which must
     // not break the app.
     await expect(user.type(stacktraceTextarea, regular.stacktrace)).resolves.toBeUndefined()
-
-    stop()
   })
 })

@@ -10,10 +10,6 @@ import { ThemeToggle } from './theme-toggle.tsx'
 import { useSourcemapsStore } from './use-sourcemaps-store.ts'
 import { setTheme, useTheme } from './use-theme.ts'
 
-// How long the stack trace input must stay unchanged before its failure to
-// parse is reported as such.
-const parseErrorSettleMs = 500
-
 const base64PrefixRegex =
   /^(?:\/\/# sourceMappingURL=)?data:application\/json;(?:charset=[^;]+;)?base64,/
 
@@ -58,26 +54,32 @@ export default function App() {
   }, [emitOnce, stackTrace])
 
   useEffect(() => {
-    if (!isParseError) {
-      return
+    function reportUnparsedStackTrace() {
+      // Every half-written stack trace is unparsable, so the input only counts
+      // as a failure once the visit is over without ever having parsed one.
+      if (
+        document.visibilityState === 'hidden' &&
+        isParseError &&
+        !emittedEventsRef.current.has('stacktrace_pasted')
+      ) {
+        emitOnce('stacktrace_parse_error')
+      }
     }
 
-    // Every prefix of a stack trace is unparsable, so the input only counts as
-    // a failure once it stops changing.
-    const timer = setTimeout(() => emitOnce('stacktrace_parse_error'), parseErrorSettleMs)
+    document.addEventListener('visibilitychange', reportUnparsedStackTrace)
 
     return () => {
-      clearTimeout(timer)
+      document.removeEventListener('visibilitychange', reportUnparsedStackTrace)
     }
-  }, [emitOnce, isParseError, stackTraceInputValue])
+  }, [emitOnce, isParseError])
 
   useEffect(() => {
-    // Unmapped frames keep their raw text, so the result differs from the
-    // input only when at least one frame resolved to an original position.
-    if (stackTrace && transformedStackTrace !== stackTrace.lines.map(line => line.raw).join('\n')) {
+    // Unmapped frames keep their raw text, so the result stays identical to the
+    // input until at least one frame resolves to an original position.
+    if (stackTrace && transformedStackTrace !== stackTraceInputValue) {
       emitOnce('stacktrace_transformed')
     }
-  }, [emitOnce, stackTrace, transformedStackTrace])
+  }, [emitOnce, stackTrace, stackTraceInputValue, transformedStackTrace])
 
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     setIsSourceMapFileInputError(false)
@@ -90,16 +92,19 @@ export default function App() {
 
     if (sourceMaps.some(sm => !sm)) {
       setIsSourceMapFileInputError(true)
+    }
+
+    addSourceMaps(sourceMaps)
+
+    event.target.value = ''
+
+    if (sourceMaps.some(sm => !sm)) {
       emitOnce('sourcemap_parse_error')
     }
 
     if (sourceMaps.some(sm => sm)) {
       emitOnce('sourcemap_added_file')
     }
-
-    addSourceMaps(sourceMaps)
-
-    event.target.value = ''
   }
 
   async function handleSourceMapTextAreaChange(event: ChangeEvent<HTMLTextAreaElement>) {
@@ -142,10 +147,10 @@ export default function App() {
       return
     }
 
-    emitOnce('sourcemap_added_text')
     addSourceMaps(sourceMap)
     setSourceMapInputValue('')
     setIsSourceMapInputError(false)
+    emitOnce('sourcemap_added_text')
   }
 
   return (

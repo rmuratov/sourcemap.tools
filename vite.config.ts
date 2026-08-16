@@ -5,6 +5,8 @@ import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv } from 'vite'
 import Sitemap from 'vite-plugin-sitemap'
 
+import { SIMPLE_ANALYTICS } from './src/analytics/vendor.ts'
+
 // Queues events fired before the async script has loaded.
 // https://docs.simpleanalytics.com/events
 const simpleAnalyticsStub =
@@ -45,7 +47,7 @@ function simpleAnalytics(enabled: boolean): Plugin {
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = { ...loadEnv(mode, process.cwd(), 'VITE_'), ...process.env }
+  const { VITE_ANALYTICS } = loadEnv(mode, process.cwd(), 'VITE_')
 
   return {
     build: {
@@ -54,7 +56,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       Sitemap({ hostname: 'https://sourcemap.tools' }),
-      simpleAnalytics(env.VITE_ANALYTICS === 'simple-analytics'),
+      simpleAnalytics(VITE_ANALYTICS === SIMPLE_ANALYTICS),
     ],
 
     test: {

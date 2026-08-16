@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event'
 import { type ChangeEvent, StrictMode } from 'react'
 import { SourceMapConsumer, SourceMapGenerator } from 'source-map'
-import { describe, expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 
 import { type AppEvent, onAppEvent } from '../app-events.ts'
 import App from '../app.tsx'
@@ -761,17 +761,30 @@ describe('memoization', () => {
   })
 })
 
-// Collects the app events emitted while a test runs. Every test must call
-// stop(), otherwise its listener keeps observing the following tests.
+// Collects the app events emitted while a test runs. The listener is removed
+// in afterEach, so a failing assertion cannot leak it into the next test.
 function collectAppEvents() {
   const events: AppEvent[] = []
-  const unsubscribe = onAppEvent(event => events.push(event))
-  return { events, stop: unsubscribe }
+  subscriptions.push(onAppEvent(event => events.push(event)))
+  return { events }
 }
+
+// Ends the page visit the way a closed or backgrounded tab does.
+function endVisit() {
+  Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' })
+  fireEvent(document, new Event('visibilitychange'))
+}
+
+const subscriptions: (() => void)[] = []
+
+afterEach(() => {
+  subscriptions.splice(0).forEach(unsubscribe => unsubscribe())
+  Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
+})
 
 describe('app events', () => {
   test('emits stacktrace_pasted once when the stack trace is parsed', async () => {
-    const { events, stop } = collectAppEvents()
+    const { events } = collectAppEvents()
 
     render(<App />)
     const user = userEvent.setup()
@@ -782,12 +795,32 @@ describe('app events', () => {
     // Typing fires a change event per keystroke, but the funnel must count
     // the visitor once.
     expect(events.filter(event => event === 'stacktrace_pasted')).toHaveLength(1)
-
-    stop()
   })
 
-  test('emits stacktrace_parse_error when the pasted text is not a stack trace', async () => {
-    const { events, stop } = collectAppEvents()
+  test('keeps working when a listener throws', async () => {
+    // A browser extension or the vendor script itself can replace sa_event
+    // with something that throws. Losing the parsed source map over that would
+    // defeat the point of keeping analytics optional.
+    subscriptions.push(
+      onAppEvent(() => {
+        throw new Error('listener blew up')
+      }),
+    )
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste(regular.sourcemaps[0].content)
+
+    const sourcemapList = await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(within(sourcemapList).getByRole('listitem')).toHaveTextContent('index-F7qoIhl0.js')
+    expect(sourcemapTextarea).toHaveValue('')
+  })
+
+  test('emits stacktrace_parse_error when the visit ends with unparsable input', async () => {
+    const { events } = collectAppEvents()
 
     render(<App />)
     const user = userEvent.setup()
@@ -795,31 +828,63 @@ describe('app events', () => {
     const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
     await user.type(stacktraceTextarea, 'lorem ipsum')
 
-    await waitFor(() => expect(events).toEqual(['stacktrace_parse_error']))
+    endVisit()
 
-    stop()
+    expect(events).toEqual(['stacktrace_parse_error'])
   })
 
-  test('does not emit stacktrace_parse_error while the stack trace is still being typed', async () => {
-    const { events, stop } = collectAppEvents()
+  test('does not emit stacktrace_parse_error while the visitor is still working', async () => {
+    const { events } = collectAppEvents()
 
     render(<App />)
     const user = userEvent.setup()
 
     const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
 
-    // Every prefix of a stack trace is unparsable, so reporting the failure
-    // eagerly would report it for every visitor who types instead of pastes.
+    // Half a stack trace is unparsable, and a visitor who pauses here to go
+    // fetch the rest has not failed at anything yet.
+    await user.type(stacktraceTextarea, 'Error: boom')
+    await new Promise(resolve => setTimeout(resolve, 600))
+
+    expect(events).toEqual([])
+  })
+
+  test('does not emit stacktrace_parse_error when the input parsed earlier in the visit', async () => {
+    const { events } = collectAppEvents()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+
     await user.type(stacktraceTextarea, regular.stacktrace)
+    expect(events).toContain('stacktrace_pasted')
 
-    await waitFor(() => expect(events).toContain('stacktrace_pasted'))
+    // Leftover unparsable text at the end of a visit that already succeeded is
+    // not a failed visit.
+    await user.clear(stacktraceTextarea)
+    await user.type(stacktraceTextarea, 'lorem ipsum')
+    endVisit()
+
     expect(events).not.toContain('stacktrace_parse_error')
+  })
 
-    stop()
+  test('does not emit stacktrace_parse_error while the page stays visible', async () => {
+    const { events } = collectAppEvents()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    await user.type(stacktraceTextarea, 'lorem ipsum')
+
+    fireEvent(document, new Event('visibilitychange'))
+
+    expect(events).toEqual([])
   })
 
   test('emits sourcemap_added_file when source map files are uploaded', async () => {
-    const { events, stop } = collectAppEvents()
+    const { events } = collectAppEvents()
 
     render(<App />)
     const user = userEvent.setup()
@@ -830,12 +895,10 @@ describe('app events', () => {
 
     await screen.findByRole('list', { name: /sourcemaps list/i })
     expect(events).toEqual(['sourcemap_added_file'])
-
-    stop()
   })
 
   test('emits stacktrace_transformed only after frames were actually mapped', async () => {
-    const { events, stop } = collectAppEvents()
+    const { events } = collectAppEvents()
 
     render(<App />)
     const user = userEvent.setup()
@@ -855,12 +918,10 @@ describe('app events', () => {
 
     await waitFor(() => expect(resultTextArea).toHaveValue(regular.result))
     expect(events.filter(event => event === 'stacktrace_transformed')).toHaveLength(1)
-
-    stop()
   })
 
   test('emits sourcemap_added_text when a source map is pasted', async () => {
-    const { events, stop } = collectAppEvents()
+    const { events } = collectAppEvents()
 
     render(<App />)
     const user = userEvent.setup()
@@ -871,12 +932,10 @@ describe('app events', () => {
 
     await screen.findByRole('list', { name: /sourcemaps list/i })
     expect(events).toEqual(['sourcemap_added_text'])
-
-    stop()
   })
 
   test('emits sourcemap_parse_error when an uploaded file is not a source map', async () => {
-    const { events, stop } = collectAppEvents()
+    const { events } = collectAppEvents()
 
     render(<App />)
     const user = userEvent.setup()
@@ -886,12 +945,10 @@ describe('app events', () => {
 
     await screen.findByText(/some of the files were not source maps/i)
     expect(events).toEqual(['sourcemap_parse_error'])
-
-    stop()
   })
 
   test('emits sourcemap_parse_error when the pasted text is not a source map', async () => {
-    const { events, stop } = collectAppEvents()
+    const { events } = collectAppEvents()
 
     render(<App />)
     const user = userEvent.setup()
@@ -902,12 +959,10 @@ describe('app events', () => {
 
     await screen.findByText(/provided text is not a source map/i)
     expect(events).toEqual(['sourcemap_parse_error'])
-
-    stop()
   })
 
   test('emits sourcemap_parse_error when the pasted base64 data URL is malformed', async () => {
-    const { events, stop } = collectAppEvents()
+    const { events } = collectAppEvents()
 
     render(<App />)
     const user = userEvent.setup()
@@ -918,8 +973,6 @@ describe('app events', () => {
 
     await screen.findByText(/provided text is not a source map/i)
     expect(events).toEqual(['sourcemap_parse_error'])
-
-    stop()
   })
 })
 

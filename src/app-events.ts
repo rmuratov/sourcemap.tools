@@ -16,7 +16,12 @@ const listeners = new Set<AppEventListener>()
 
 export function emitAppEvent(event: AppEvent) {
   for (const listener of listeners) {
-    listener(event)
+    try {
+      listener(event)
+    } catch {
+      // A listener is a bystander: whatever it does, or fails to do, must not
+      // reach the code that emitted the event.
+    }
   }
 }
 

@@ -23,4 +23,12 @@ ReactDOM.createRoot(container).render(
     <App />
   </React.StrictMode>,
 )
+
+// The app itself only emits neutral app events; forwarding them anywhere is
+// opt-in and lives entirely in the adapter loaded here.
+if (import.meta.env.VITE_ANALYTICS === 'simple-analytics') {
+  void import('./analytics/simple-analytics.ts').then(({ initSimpleAnalytics }) => {
+    initSimpleAnalytics()
+  })
+}
 /* v8 ignore end */

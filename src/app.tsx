@@ -1,6 +1,7 @@
 import cx from 'clsx'
-import { type ChangeEvent, useMemo, useRef, useState } from 'react'
+import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { type AppEvent, emitAppEvent } from './app-events.ts'
 import { GitHubLogo } from './git-hub-logo.tsx'
 import { transform } from './lib.ts'
 import { SourceMap } from './source-map.ts'
@@ -8,6 +9,10 @@ import { StackTrace } from './stack-trace.ts'
 import { ThemeToggle } from './theme-toggle.tsx'
 import { useSourcemapsStore } from './use-sourcemaps-store.ts'
 import { setTheme, useTheme } from './use-theme.ts'
+
+// How long the stack trace input must stay unchanged before its failure to
+// parse is reported as such.
+const parseErrorSettleMs = 500
 
 const base64PrefixRegex =
   /^(?:\/\/# sourceMappingURL=)?data:application\/json;(?:charset=[^;]+;)?base64,/
@@ -34,6 +39,46 @@ export default function App() {
     [sourceMaps, stackTrace],
   )
 
+  // Every event describes a step of the same visit, so emitting it repeatedly
+  // (once per keystroke, or twice under StrictMode) would say nothing new.
+  const emittedEventsRef = useRef(new Set<AppEvent>())
+  const emitOnce = useCallback((event: AppEvent) => {
+    if (emittedEventsRef.current.has(event)) {
+      return
+    }
+
+    emittedEventsRef.current.add(event)
+    emitAppEvent(event)
+  }, [])
+
+  useEffect(() => {
+    if (stackTrace) {
+      emitOnce('stacktrace_pasted')
+    }
+  }, [emitOnce, stackTrace])
+
+  useEffect(() => {
+    if (!isParseError) {
+      return
+    }
+
+    // Every prefix of a stack trace is unparsable, so the input only counts as
+    // a failure once it stops changing.
+    const timer = setTimeout(() => emitOnce('stacktrace_parse_error'), parseErrorSettleMs)
+
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [emitOnce, isParseError, stackTraceInputValue])
+
+  useEffect(() => {
+    // Unmapped frames keep their raw text, so the result differs from the
+    // input only when at least one frame resolved to an original position.
+    if (stackTrace && transformedStackTrace !== stackTrace.lines.map(line => line.raw).join('\n')) {
+      emitOnce('stacktrace_transformed')
+    }
+  }, [emitOnce, stackTrace, transformedStackTrace])
+
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     setIsSourceMapFileInputError(false)
 
@@ -45,6 +90,11 @@ export default function App() {
 
     if (sourceMaps.some(sm => !sm)) {
       setIsSourceMapFileInputError(true)
+      emitOnce('sourcemap_parse_error')
+    }
+
+    if (sourceMaps.some(sm => sm)) {
+      emitOnce('sourcemap_added_file')
     }
 
     addSourceMaps(sourceMaps)
@@ -65,6 +115,7 @@ export default function App() {
       } catch {
         setIsSourceMapInputError(true)
         setSourceMapInputValue(event.target.value)
+        emitOnce('sourcemap_parse_error')
         return
       }
     }
@@ -82,9 +133,16 @@ export default function App() {
     if (!sourceMap) {
       setSourceMapInputValue(text)
       setIsSourceMapInputError(Boolean(text))
+
+      // Clearing the textarea is not a failed parse.
+      if (text) {
+        emitOnce('sourcemap_parse_error')
+      }
+
       return
     }
 
+    emitOnce('sourcemap_added_text')
     addSourceMaps(sourceMap)
     setSourceMapInputValue('')
     setIsSourceMapInputError(false)

@@ -45,3 +45,14 @@ If you have a real-world case where this matters, please [open an issue](https:/
    ```shell
    npm test
    ```
+
+## Analytics
+
+The app itself sends nothing anywhere: it emits neutral app events (`src/app-events.ts`) that
+nobody listens to by default. Stack traces and source maps never leave the browser.
+
+The deployment of https://sourcemap.tools builds with `VITE_ANALYTICS=simple-analytics`, which
+loads the [Simple Analytics](https://www.simpleanalytics.com/) snippet and the adapter in
+`src/analytics/simple-analytics.ts`. It forwards event names only — no user content.
+
+Builds without that variable, including every fork, ship no analytics: no snippet, no adapter.

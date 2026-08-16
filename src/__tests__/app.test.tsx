@@ -4,6 +4,7 @@ import { type ChangeEvent, StrictMode } from 'react'
 import { SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { describe, expect, test, vi } from 'vitest'
 
+import { type AppEvent, onAppEvent } from '../app-events.ts'
 import App from '../app.tsx'
 import { SourceMap } from '../source-map.ts'
 import { StackTrace } from '../stack-trace.ts'
@@ -757,6 +758,168 @@ describe('memoization', () => {
     expect(resultTextArea).toHaveValue(regular.result)
 
     positionSpy.mockRestore()
+  })
+})
+
+// Collects the app events emitted while a test runs. Every test must call
+// stop(), otherwise its listener keeps observing the following tests.
+function collectAppEvents() {
+  const events: AppEvent[] = []
+  const unsubscribe = onAppEvent(event => events.push(event))
+  return { events, stop: unsubscribe }
+}
+
+describe('app events', () => {
+  test('emits stacktrace_pasted once when the stack trace is parsed', async () => {
+    const { events, stop } = collectAppEvents()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    await user.type(stacktraceTextarea, regular.stacktrace)
+
+    // Typing fires a change event per keystroke, but the funnel must count
+    // the visitor once.
+    expect(events.filter(event => event === 'stacktrace_pasted')).toHaveLength(1)
+
+    stop()
+  })
+
+  test('emits stacktrace_parse_error when the pasted text is not a stack trace', async () => {
+    const { events, stop } = collectAppEvents()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    await user.type(stacktraceTextarea, 'lorem ipsum')
+
+    await waitFor(() => expect(events).toEqual(['stacktrace_parse_error']))
+
+    stop()
+  })
+
+  test('does not emit stacktrace_parse_error while the stack trace is still being typed', async () => {
+    const { events, stop } = collectAppEvents()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+
+    // Every prefix of a stack trace is unparsable, so reporting the failure
+    // eagerly would report it for every visitor who types instead of pastes.
+    await user.type(stacktraceTextarea, regular.stacktrace)
+
+    await waitFor(() => expect(events).toContain('stacktrace_pasted'))
+    expect(events).not.toContain('stacktrace_parse_error')
+
+    stop()
+  })
+
+  test('emits sourcemap_added_file when source map files are uploaded', async () => {
+    const { events, stop } = collectAppEvents()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
+    await user.upload(sourceMapFileInput, files)
+
+    await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(events).toEqual(['sourcemap_added_file'])
+
+    stop()
+  })
+
+  test('emits stacktrace_transformed only after frames were actually mapped', async () => {
+    const { events, stop } = collectAppEvents()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const stacktraceTextarea = screen.getByRole('textbox', { name: /minified stack trace/i })
+    const resultTextArea = screen.getByRole('textbox', { name: /original stack trace/i })
+
+    await user.type(stacktraceTextarea, regular.stacktrace)
+
+    // Without source maps the stack trace passes through verbatim, which is
+    // not a transformation.
+    expect(events).not.toContain('stacktrace_transformed')
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    const files = regular.sourcemaps.map(sm => new File([sm.content], sm.fileName))
+    await user.upload(sourceMapFileInput, files)
+
+    await waitFor(() => expect(resultTextArea).toHaveValue(regular.result))
+    expect(events.filter(event => event === 'stacktrace_transformed')).toHaveLength(1)
+
+    stop()
+  })
+
+  test('emits sourcemap_added_text when a source map is pasted', async () => {
+    const { events, stop } = collectAppEvents()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste(regular.sourcemaps[0].content)
+
+    await screen.findByRole('list', { name: /sourcemaps list/i })
+    expect(events).toEqual(['sourcemap_added_text'])
+
+    stop()
+  })
+
+  test('emits sourcemap_parse_error when an uploaded file is not a source map', async () => {
+    const { events, stop } = collectAppEvents()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourceMapFileInput = screen.getByLabelText(/choose files/i)
+    await user.upload(sourceMapFileInput, new File(['lorem ipsum'], 'lorem_ipsum.txt'))
+
+    await screen.findByText(/some of the files were not source maps/i)
+    expect(events).toEqual(['sourcemap_parse_error'])
+
+    stop()
+  })
+
+  test('emits sourcemap_parse_error when the pasted text is not a source map', async () => {
+    const { events, stop } = collectAppEvents()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste('lorem ipsum')
+
+    await screen.findByText(/provided text is not a source map/i)
+    expect(events).toEqual(['sourcemap_parse_error'])
+
+    stop()
+  })
+
+  test('emits sourcemap_parse_error when the pasted base64 data URL is malformed', async () => {
+    const { events, stop } = collectAppEvents()
+
+    render(<App />)
+    const user = userEvent.setup()
+
+    const sourcemapTextarea = screen.getByRole('textbox', { name: /source map/i })
+    sourcemapTextarea.focus()
+    await user.paste('data:application/json;base64,!!!not-valid-base64!!!')
+
+    await screen.findByText(/provided text is not a source map/i)
+    expect(events).toEqual(['sourcemap_parse_error'])
+
+    stop()
   })
 })
 

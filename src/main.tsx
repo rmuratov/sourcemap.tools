@@ -4,6 +4,8 @@ import ReactDOM from 'react-dom/client'
 import { SourceMapConsumer } from 'source-map'
 import mappingsWasmUrl from 'source-map/lib/mappings.wasm?url'
 
+import { initSimpleAnalytics } from './analytics/simple-analytics.ts'
+import { SIMPLE_ANALYTICS } from './analytics/vendor.ts'
 import App from './app.tsx'
 import './index.css'
 
@@ -23,4 +25,11 @@ ReactDOM.createRoot(container).render(
     <App />
   </React.StrictMode>,
 )
+
+// The app itself only emits neutral app events; forwarding them anywhere is
+// opt-in and lives entirely in the adapter below. Builds that leave
+// VITE_ANALYTICS unset drop both the branch and the adapter at build time.
+if (import.meta.env.VITE_ANALYTICS === SIMPLE_ANALYTICS) {
+  initSimpleAnalytics()
+}
 /* v8 ignore end */

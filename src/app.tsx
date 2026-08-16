@@ -1,6 +1,7 @@
 import cx from 'clsx'
-import { type ChangeEvent, useMemo, useRef, useState } from 'react'
+import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { type AppEvent, emitAppEvent } from './app-events.ts'
 import { GitHubLogo } from './git-hub-logo.tsx'
 import { transform } from './lib.ts'
 import { SourceMap } from './source-map.ts'
@@ -34,6 +35,52 @@ export default function App() {
     [sourceMaps, stackTrace],
   )
 
+  // Every event describes a step of the same visit, so emitting it repeatedly
+  // (once per keystroke, or twice under StrictMode) would say nothing new.
+  const emittedEventsRef = useRef(new Set<AppEvent>())
+  const emitOnce = useCallback((event: AppEvent) => {
+    if (emittedEventsRef.current.has(event)) {
+      return
+    }
+
+    emittedEventsRef.current.add(event)
+    emitAppEvent(event)
+  }, [])
+
+  useEffect(() => {
+    if (stackTrace) {
+      emitOnce('stacktrace_pasted')
+    }
+  }, [emitOnce, stackTrace])
+
+  useEffect(() => {
+    function reportUnparsedStackTrace() {
+      // Every half-written stack trace is unparsable, so the input only counts
+      // as a failure once the visit is over without ever having parsed one.
+      if (
+        document.visibilityState === 'hidden' &&
+        isParseError &&
+        !emittedEventsRef.current.has('stacktrace_pasted')
+      ) {
+        emitOnce('stacktrace_parse_error')
+      }
+    }
+
+    document.addEventListener('visibilitychange', reportUnparsedStackTrace)
+
+    return () => {
+      document.removeEventListener('visibilitychange', reportUnparsedStackTrace)
+    }
+  }, [emitOnce, isParseError])
+
+  useEffect(() => {
+    // Unmapped frames keep their raw text, so the result stays identical to the
+    // input until at least one frame resolves to an original position.
+    if (stackTrace && transformedStackTrace !== stackTraceInputValue) {
+      emitOnce('stacktrace_transformed')
+    }
+  }, [emitOnce, stackTrace, stackTraceInputValue, transformedStackTrace])
+
   async function handleSourceMapFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     setIsSourceMapFileInputError(false)
 
@@ -50,6 +97,14 @@ export default function App() {
     addSourceMaps(sourceMaps)
 
     event.target.value = ''
+
+    if (sourceMaps.some(sm => !sm)) {
+      emitOnce('sourcemap_parse_error')
+    }
+
+    if (sourceMaps.some(sm => sm)) {
+      emitOnce('sourcemap_added_file')
+    }
   }
 
   async function handleSourceMapTextAreaChange(event: ChangeEvent<HTMLTextAreaElement>) {
@@ -65,6 +120,7 @@ export default function App() {
       } catch {
         setIsSourceMapInputError(true)
         setSourceMapInputValue(event.target.value)
+        emitOnce('sourcemap_parse_error')
         return
       }
     }
@@ -82,12 +138,19 @@ export default function App() {
     if (!sourceMap) {
       setSourceMapInputValue(text)
       setIsSourceMapInputError(Boolean(text))
+
+      // Clearing the textarea is not a failed parse.
+      if (text) {
+        emitOnce('sourcemap_parse_error')
+      }
+
       return
     }
 
     addSourceMaps(sourceMap)
     setSourceMapInputValue('')
     setIsSourceMapInputError(false)
+    emitOnce('sourcemap_added_text')
   }
 
   return (

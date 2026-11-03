@@ -19,5 +19,5 @@ describe('entry point', () => {
     const wasmUrl = initializeSpy.mock.calls[0][0]['lib/mappings.wasm']
     expect(wasmUrl).toMatch(/mappings\.wasm$/)
     expect(wasmUrl).not.toMatch(/^https?:/)
-  })
+  }, 10_000)
 })

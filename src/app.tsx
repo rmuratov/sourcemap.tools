@@ -9,6 +9,7 @@ import { StackTrace } from './stack-trace.ts'
 import { ThemeToggle } from './theme-toggle.tsx'
 import { useSourcemapsStore } from './use-sourcemaps-store.ts'
 import { setTheme, useTheme } from './use-theme.ts'
+import { extractSourceMapFiles, isZipFile } from './zip.ts'
 
 const base64PrefixRegex =
   /^(?:\/\/# sourceMappingURL=)?data:application\/json;(?:charset=[^;]+;)?base64,/
@@ -86,9 +87,24 @@ export default function App() {
 
     const files = event.target.files ?? []
 
-    const sourceMaps = await Promise.all(
-      Array.from(files).map(file => file.text().then(text => SourceMap.create(text, file.name))),
-    )
+    const sourceMaps = (
+      await Promise.all(
+        Array.from(files).map(async file => {
+          if (!isZipFile(file)) {
+            return [await SourceMap.create(await file.text(), file.name)]
+          }
+
+          let extracted
+          try {
+            extracted = await extractSourceMapFiles(file)
+          } catch {
+            return [null]
+          }
+
+          return Promise.all(extracted.map(f => SourceMap.create(f.text, f.name)))
+        }),
+      )
+    ).flat()
 
     if (sourceMaps.some(sm => !sm)) {
       setIsSourceMapFileInputError(true)
@@ -262,7 +278,7 @@ export default function App() {
                   >
                     Choose files
                     <input
-                      accept=".map,.txt,.json"
+                      accept=".map,.txt,.json,.zip"
                       aria-labelledby="file-upload-button"
                       className="file-input file-input-bordered"
                       hidden

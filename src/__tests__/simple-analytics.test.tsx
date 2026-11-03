@@ -45,11 +45,13 @@ describe('simple analytics', () => {
 
     await waitFor(() => expect(resultTextArea).toHaveValue(regular.result))
 
-    expect(saEvent.mock.calls.map(([name]) => name)).toEqual([
-      'stacktrace_pasted',
-      'sourcemap_added_file',
-      'stacktrace_transformed',
-    ])
+    await waitFor(() =>
+      expect(saEvent.mock.calls.map(([name]) => name)).toEqual([
+        'stacktrace_pasted',
+        'sourcemap_added_file',
+        'stacktrace_transformed',
+      ]),
+    )
   })
 
   test('stops reporting after the subscription is removed', async () => {
